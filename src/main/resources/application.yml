@@ -17,10 +17,26 @@ spring:
       port: 6379
       database: 0
 
-mybatis-plus:
+  mvc:
+    throw-exception-if-no-handler-found: true
+
+  web:
+    resources:
+      add-mappings: false
+
+mybatis:
   mapper-locations: classpath*:/mapper/**/*.xml
   configuration:
     map-underscore-to-camel-case: true
+
+app:
+  project-name: spms
+  login-header: Authorization
+  access-token-secret: "1234567890"
+  redis:
+    prefix: "spms:"
+    cache-expire-second: 86400
+    lock-timeout-millis: 3000
 
 server:
   port: 18080

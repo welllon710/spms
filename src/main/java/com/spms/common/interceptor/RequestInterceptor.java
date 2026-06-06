@@ -1,0 +1,48 @@
+package com.spms.common.interceptor;
+
+import com.spms.common.config.AppProperties;
+import com.spms.common.exception.AppException;
+import com.spms.common.exception.CommonError;
+import com.spms.common.security.Access;
+import com.spms.common.security.PermissionUtil;
+import com.spms.common.security.TokenService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+@Component
+@RequiredArgsConstructor
+public class RequestInterceptor implements HandlerInterceptor {
+    private final AppProperties appProperties;
+    private final TokenService tokenService;
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+        if (!(handler instanceof HandlerMethod handlerMethod)) {
+            return true;
+        }
+        Access access = PermissionUtil.getRequiredAccess(handlerMethod.getBeanType(), handlerMethod.getMethod());
+        if (!access.isLogin()) {
+            return true;
+        }
+        String token = request.getHeader(appProperties.getLoginHeader());
+        if (token == null || token.isBlank()) {
+            throw new AppException(CommonError.UNAUTHORIZED);
+        }
+        long userId = tokenService.verify(token);
+        if (access.isAuthorize()) {
+            checkUserPermission(userId, PermissionUtil.getPermissionIdentity(handlerMethod.getBeanType(), handlerMethod.getMethod()));
+        }
+        return true;
+    }
+
+    private void checkUserPermission(long userId, String permissionIdentity) {
+        if (userId == 1L) {
+            return;
+        }
+        throw new AppException(CommonError.FORBIDDEN, "你无权访问 " + permissionIdentity);
+    }
+}
