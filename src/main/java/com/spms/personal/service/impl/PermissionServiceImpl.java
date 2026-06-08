@@ -1,14 +1,16 @@
 package com.spms.personal.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.spms.base.BaseService;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.personal.entity.PermissionEntity;
 import com.spms.personal.mapper.PermissionMapper;
 import com.spms.personal.model.PermissionPageFilter;
-import com.spms.personal.model.PermissionPageRequest;
 import com.spms.personal.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,15 +20,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.spms.common.util.ParamUtils.requireId;
+import static com.spms.common.util.ParamUtils.requireNotNull;
+import static com.spms.common.util.ParamUtils.requireText;
+import static com.spms.common.util.ParamUtils.trimToNull;
+
 @Service
 @RequiredArgsConstructor
-public class PermissionServiceImpl extends BaseService implements PermissionService {
+public class PermissionServiceImpl extends BaseService<PermissionEntity> implements PermissionService {
     private static final SortParam DEFAULT_SORT = new SortParam("id", "asc");
 
     private final PermissionMapper permissionMapper;
 
     @Override
-    public PageResult<PermissionEntity> getPage(PermissionPageRequest request) {
+    public PageResult<PermissionEntity> getPage(PageQuery<PermissionPageFilter> request) {
         PermissionPageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = new HashMap<>();
         params.put("identity", trimToNull(filter == null ? null : filter.identity()));
@@ -35,7 +42,8 @@ public class PermissionServiceImpl extends BaseService implements PermissionServ
         params.put("type", filter == null ? null : filter.type());
         params.put("isSystem", filter == null ? null : filter.isSystem());
         params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        return getPage(request, () -> permissionMapper.getPageList(params), DEFAULT_SORT);
+        PageHelper.startPage(getPageNum(request), getPageSize(request));
+        return PageResult.from(new PageInfo<>(permissionMapper.getPageList(params)), DEFAULT_SORT);
     }
 
     @Override
@@ -101,7 +109,7 @@ public class PermissionServiceImpl extends BaseService implements PermissionServ
     }
 
     private void validatePermission(PermissionEntity permission, boolean requireId) {
-        requireEntity(permission);
+        requireNotNull(permission, "请求参数不能为空");
         if (requireId && permission.getId() == null) {
             throw new AppException(CommonError.PARAM_MISSING, "权限ID不能为空");
         }

@@ -1,14 +1,16 @@
 package com.spms.personal.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.spms.base.BaseService;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.personal.entity.UnitEntity;
 import com.spms.personal.mapper.UnitMapper;
 import com.spms.personal.model.UnitPageFilter;
-import com.spms.personal.model.UnitPageRequest;
 import com.spms.personal.service.UnitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,21 +19,27 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.spms.common.util.ParamUtils.requireId;
+import static com.spms.common.util.ParamUtils.requireNotNull;
+import static com.spms.common.util.ParamUtils.requireText;
+import static com.spms.common.util.ParamUtils.trimToNull;
+
 @Service
 @RequiredArgsConstructor
-public class UnitServiceImpl extends BaseService implements UnitService {
+public class UnitServiceImpl extends BaseService<UnitEntity> implements UnitService {
     private static final SortParam DEFAULT_SORT = new SortParam("id", "desc");
 
     private final UnitMapper unitMapper;
 
     @Override
-    public PageResult<UnitEntity> getPage(UnitPageRequest request) {
+    public PageResult<UnitEntity> getPage(PageQuery<UnitPageFilter> request) {
         UnitPageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = new HashMap<>();
         params.put("name", trimToNull(filter == null ? null : filter.name()));
         params.put("code", trimToNull(filter == null ? null : filter.code()));
         params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        return getPage(request, () -> unitMapper.getPageList(params), DEFAULT_SORT);
+        PageHelper.startPage(getPageNum(request), getPageSize(request));
+        return PageResult.from(new PageInfo<>(unitMapper.getPageList(params)), DEFAULT_SORT);
     }
 
     @Override
@@ -82,7 +90,7 @@ public class UnitServiceImpl extends BaseService implements UnitService {
     }
 
     private void validateUnit(UnitEntity unit, boolean requireId) {
-        requireEntity(unit);
+        requireNotNull(unit, "请求参数不能为空");
         if (requireId && unit.getId() == null) {
             throw new AppException(CommonError.PARAM_MISSING, "单位ID不能为空");
         }

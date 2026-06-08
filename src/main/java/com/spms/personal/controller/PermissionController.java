@@ -2,11 +2,12 @@ package com.spms.personal.controller;
 
 import com.spms.base.Api;
 import com.spms.base.ApiController;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.common.result.Json;
 import com.spms.common.security.Permission;
 import com.spms.personal.entity.PermissionEntity;
-import com.spms.personal.model.PermissionPageRequest;
+import com.spms.personal.model.PermissionPageFilter;
 import com.spms.personal.service.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,7 @@ public class PermissionController extends ApiController {
     private final PermissionService permissionService;
 
     @PostMapping("/getPage")
-    public Json<PageResult<PermissionEntity>> getPage(@RequestBody(required = false) PermissionPageRequest request) {
+    public Json<PageResult<PermissionEntity>> getPage(@RequestBody(required = false) PageQuery<PermissionPageFilter> request) {
         return Json.data(permissionService.getPage(request));
     }
 

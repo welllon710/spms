@@ -1,11 +1,12 @@
 package com.spms.personal.service;
 
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.personal.entity.UnitEntity;
-import com.spms.personal.model.UnitPageRequest;
+import com.spms.personal.model.UnitPageFilter;
 
 public interface UnitService {
-    PageResult<UnitEntity> getPage(UnitPageRequest request);
+    PageResult<UnitEntity> getPage(PageQuery<UnitPageFilter> request);
 
     UnitEntity getDetail(Long id);
 

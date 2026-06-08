@@ -2,11 +2,11 @@ package com.spms.personal.controller;
 
 import com.spms.base.Api;
 import com.spms.base.ApiController;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
 import com.spms.common.result.Json;
 import com.spms.common.security.Permission;
 import com.spms.personal.entity.MenuEntity;
-import com.spms.personal.model.MenuPageRequest;
+import com.spms.personal.model.MenuPageFilter;
 import com.spms.personal.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,7 +21,7 @@ public class MenuController extends ApiController {
     private final MenuService menuService;
 
     @PostMapping("/getList")
-    public Json<List<MenuEntity>> getPage(@RequestBody(required = false) MenuPageRequest request) {
+    public Json<List<MenuEntity>> getPage(@RequestBody(required = false) PageQuery<MenuPageFilter> request) {
         return Json.data(menuService.getPage(request));
     }
 

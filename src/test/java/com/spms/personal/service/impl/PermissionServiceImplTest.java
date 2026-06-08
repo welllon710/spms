@@ -2,13 +2,12 @@ package com.spms.personal.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.spms.base.PageParam;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.common.exception.AppException;
 import com.spms.personal.entity.PermissionEntity;
 import com.spms.personal.mapper.PermissionMapper;
 import com.spms.personal.model.PermissionPageFilter;
-import com.spms.personal.model.PermissionPageRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,9 +48,10 @@ class PermissionServiceImplTest {
         page.setTotal(1);
         page.add(new PermissionEntity());
         when(permissionMapper.getPageList(anyMap())).thenReturn(page);
-        PermissionPageRequest request = new PermissionPageRequest(
+        PageQuery<PermissionPageFilter> request = new PageQuery<>(
                 new PermissionPageFilter(" role:add ", " add ", 0L, 1, false, false),
-                new PageParam(1, 20)
+                1,
+                20
         );
 
         PageResult<PermissionEntity> result = permissionService.getPage(request);

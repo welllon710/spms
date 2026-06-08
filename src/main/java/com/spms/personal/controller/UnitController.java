@@ -2,11 +2,12 @@ package com.spms.personal.controller;
 
 import com.spms.base.Api;
 import com.spms.base.ApiController;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.common.result.Json;
 import com.spms.common.security.Permission;
 import com.spms.personal.entity.UnitEntity;
-import com.spms.personal.model.UnitPageRequest;
+import com.spms.personal.model.UnitPageFilter;
 import com.spms.personal.service.UnitService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,7 @@ public class UnitController extends ApiController {
     private final UnitService unitService;
 
     @PostMapping("/getPage")
-    public Json<PageResult<UnitEntity>> getPage(@RequestBody(required = false) UnitPageRequest request) {
+    public Json<PageResult<UnitEntity>> getPage(@RequestBody(required = false) PageQuery<UnitPageFilter> request) {
         return Json.data(unitService.getPage(request));
     }
 

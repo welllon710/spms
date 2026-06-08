@@ -1,14 +1,16 @@
 package com.spms.personal.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.spms.base.BaseService;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.personal.entity.DepartmentEntity;
 import com.spms.personal.mapper.DepartmentMapper;
 import com.spms.personal.model.DepartmentPageFilter;
-import com.spms.personal.model.DepartmentPageRequest;
 import com.spms.personal.service.DepartmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,22 +20,28 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.spms.common.util.ParamUtils.requireId;
+import static com.spms.common.util.ParamUtils.requireNotNull;
+import static com.spms.common.util.ParamUtils.requireText;
+import static com.spms.common.util.ParamUtils.trimToNull;
+
 @Service
 @RequiredArgsConstructor
-public class DepartmentServiceImpl extends BaseService implements DepartmentService {
+public class DepartmentServiceImpl extends BaseService<DepartmentEntity> implements DepartmentService {
     private static final SortParam DEFAULT_SORT = new SortParam("orderNo", "asc");
 
     private final DepartmentMapper departmentMapper;
 
     @Override
-    public PageResult<DepartmentEntity> getPage(DepartmentPageRequest request) {
+    public PageResult<DepartmentEntity> getPage(PageQuery<DepartmentPageFilter> request) {
         DepartmentPageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = new HashMap<>();
         params.put("name", trimToNull(filter == null ? null : filter.name()));
         params.put("code", trimToNull(filter == null ? null : filter.code()));
         params.put("parentId", filter == null ? null : filter.parentId());
         params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        return getPage(request, () -> departmentMapper.getPageList(params), DEFAULT_SORT);
+        PageHelper.startPage(getPageNum(request), getPageSize(request));
+        return PageResult.from(new PageInfo<>(departmentMapper.getPageList(params)), DEFAULT_SORT);
     }
 
     @Override
@@ -92,7 +100,7 @@ public class DepartmentServiceImpl extends BaseService implements DepartmentServ
     }
 
     private void validateDepartment(DepartmentEntity department, boolean requireId) {
-        requireEntity(department);
+        requireNotNull(department, "请求参数不能为空");
         if (requireId && department.getId() == null) {
             throw new AppException(CommonError.PARAM_MISSING, "部门ID不能为空");
         }

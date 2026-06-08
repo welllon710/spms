@@ -2,13 +2,12 @@ package com.spms.personal.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.spms.base.PageParam;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.common.exception.AppException;
 import com.spms.personal.entity.UnitEntity;
 import com.spms.personal.mapper.UnitMapper;
 import com.spms.personal.model.UnitPageFilter;
-import com.spms.personal.model.UnitPageRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,9 +49,10 @@ class UnitServiceImplTest {
         page.add(new UnitEntity());
         page.add(new UnitEntity());
         when(unitMapper.getPageList(anyMap())).thenReturn(page);
-        UnitPageRequest request = new UnitPageRequest(
+        PageQuery<UnitPageFilter> request = new PageQuery<>(
                 new UnitPageFilter(" meter ", " M ", false),
-                new PageParam(1, 20)
+                1,
+                20
         );
 
         PageResult<UnitEntity> result = unitService.getPage(request);
@@ -66,8 +66,8 @@ class UnitServiceImplTest {
         assertThat(result.total()).isEqualTo(2);
         assertThat(result.pageCount()).isEqualTo(1);
         assertThat(result.list()).hasSize(2);
-        assertThat(result.page().pageNum()).isEqualTo(1);
-        assertThat(result.page().pageSize()).isEqualTo(20);
+        assertThat(result.pageNum()).isEqualTo(1);
+        assertThat(result.pageSize()).isEqualTo(20);
         assertThat(result.sort().field()).isEqualTo("id");
         assertThat(result.sort().direction()).isEqualTo("desc");
     }

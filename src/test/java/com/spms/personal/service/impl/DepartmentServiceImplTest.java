@@ -2,13 +2,12 @@ package com.spms.personal.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.spms.base.PageParam;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.common.exception.AppException;
 import com.spms.personal.entity.DepartmentEntity;
 import com.spms.personal.mapper.DepartmentMapper;
 import com.spms.personal.model.DepartmentPageFilter;
-import com.spms.personal.model.DepartmentPageRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,9 +48,10 @@ class DepartmentServiceImplTest {
         page.setTotal(1);
         page.add(new DepartmentEntity());
         when(departmentMapper.getPageList(anyMap())).thenReturn(page);
-        DepartmentPageRequest request = new DepartmentPageRequest(
+        PageQuery<DepartmentPageFilter> request = new PageQuery<>(
                 new DepartmentPageFilter(" sales ", " D001 ", 0L, false),
-                new PageParam(1, 20)
+                1,
+                20
         );
 
         PageResult<DepartmentEntity> result = departmentService.getPage(request);

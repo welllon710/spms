@@ -3,18 +3,17 @@ package com.spms.personal.controller;
 
 import com.spms.base.Api;
 import com.spms.base.ApiController;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.common.result.Json;
 import com.spms.common.security.Permission;
 import com.spms.personal.dto.AuthorizeMenuDto;
 import com.spms.personal.entity.RoleEntity;
-import com.spms.personal.model.RolePageRequest;
+import com.spms.personal.model.RolePageFilter;
 import com.spms.personal.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
-import java.util.Map;
 
 @Api("role")
 @Permission
@@ -23,7 +22,7 @@ public class RoleController extends ApiController {
     private final RoleService roleService;
 
     @PostMapping("/getPage")
-    public Json<PageResult<RoleEntity>> getPage(@RequestBody(required = false) RolePageRequest request) {
+    public Json<PageResult<RoleEntity>> getPage(@RequestBody(required = false) PageQuery<RolePageFilter> request) {
         return Json.data(roleService.getPage(request));
     }
 

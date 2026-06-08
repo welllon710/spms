@@ -2,12 +2,11 @@ package com.spms.personal.service.impl;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.Page;
-import com.spms.base.PageResult;
-import com.spms.base.PageParam;
+import com.spms.common.result.PageResult;
+import com.spms.base.PageQuery;
 import com.spms.personal.mapper.RoleMapper;
 import com.spms.personal.entity.RoleEntity;
 import com.spms.personal.model.RolePageFilter;
-import com.spms.personal.model.RolePageRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,9 +49,10 @@ class RoleServiceImplTest {
         page.add(new RoleEntity());
         page.add(new RoleEntity());
         when(roleMapper.getPageList(anyMap())).thenReturn(page);
-        RolePageRequest request = new RolePageRequest(
+        PageQuery<RolePageFilter> request = new PageQuery<>(
                 new RolePageFilter(" admin ", " ADMIN ", false),
-                new PageParam(1, 20)
+                1,
+                20
         );
 
         PageResult<RoleEntity> result = roleService.getPage(request);
@@ -66,8 +66,8 @@ class RoleServiceImplTest {
         assertThat(result.total()).isEqualTo(2);
         assertThat(result.pageCount()).isEqualTo(1);
         assertThat(result.list()).hasSize(2);
-        assertThat(result.page().pageNum()).isEqualTo(1);
-        assertThat(result.page().pageSize()).isEqualTo(20);
+        assertThat(result.pageNum()).isEqualTo(1);
+        assertThat(result.pageSize()).isEqualTo(20);
         assertThat(result.sort().field()).isEqualTo("id");
         assertThat(result.sort().direction()).isEqualTo("desc");
     }

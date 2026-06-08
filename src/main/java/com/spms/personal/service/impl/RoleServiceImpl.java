@@ -1,7 +1,10 @@
 package com.spms.personal.service.impl;
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.spms.base.BaseService;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
@@ -10,7 +13,6 @@ import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.entity.RoleEntity;
 import com.spms.personal.model.RolePageFilter;
 import com.spms.personal.mapper.RoleMapper;
-import com.spms.personal.model.RolePageRequest;
 import com.spms.personal.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,9 +23,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.spms.common.util.ParamUtils.requireId;
+import static com.spms.common.util.ParamUtils.requireNotNull;
+import static com.spms.common.util.ParamUtils.requireText;
+import static com.spms.common.util.ParamUtils.trimToNull;
+
 @Service
 @RequiredArgsConstructor
-public class RoleServiceImpl extends BaseService implements RoleService {
+public class RoleServiceImpl extends BaseService<RoleEntity> implements RoleService {
     private static final SortParam DEFAULT_SORT = new SortParam("id", "desc");
     private static final String ROLE_CODE_PREFIX = "RO";
     private static final int ROLE_CODE_SERIAL_LENGTH = 4;
@@ -31,13 +38,14 @@ public class RoleServiceImpl extends BaseService implements RoleService {
     private final RoleMapper roleMapper;
 
     @Override
-    public PageResult<RoleEntity> getPage(RolePageRequest request) {
+    public PageResult<RoleEntity> getPage(PageQuery<RolePageFilter> request) {
         RolePageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = new HashMap<>();
         params.put("name", trimToNull(filter == null ? null : filter.name()));
         params.put("code", trimToNull(filter == null ? null : filter.code()));
         params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        return getPage(request, () -> roleMapper.getPageList(params), DEFAULT_SORT);
+        PageHelper.startPage(getPageNum(request), getPageSize(request));
+        return PageResult.from(new PageInfo<>(roleMapper.getPageList(params)), DEFAULT_SORT);
     }
 
     @Override
@@ -117,7 +125,7 @@ public class RoleServiceImpl extends BaseService implements RoleService {
     }
 
     private void validateRole(RoleEntity role, boolean requireId) {
-        requireEntity(role);
+        requireNotNull(role, "请求参数不能为空");
         if (requireId && role.getId() == null) {
             throw new AppException(CommonError.PARAM_MISSING, "角色ID不能为空");
         }

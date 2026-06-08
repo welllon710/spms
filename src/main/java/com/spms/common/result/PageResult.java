@@ -1,6 +1,7 @@
-package com.spms.base;
+package com.spms.common.result;
 
 import com.github.pagehelper.PageInfo;
+import com.spms.base.SortParam;
 
 import java.util.List;
 
@@ -8,7 +9,8 @@ public record PageResult<T>(
         long total,
         int pageCount,
         List<T> list,
-        PageParam page,
+        Integer pageNum,
+        Integer pageSize,
         SortParam sort
 ) {
     public static <T> PageResult<T> from(PageInfo<T> pageInfo, SortParam sort) {
@@ -16,7 +18,8 @@ public record PageResult<T>(
                 pageInfo.getTotal(),
                 pageInfo.getPages(),
                 pageInfo.getList(),
-                new PageParam(pageInfo.getPageNum(), pageInfo.getPageSize()),
+                pageInfo.getPageNum(),
+                pageInfo.getPageSize(),
                 sort
         );
     }

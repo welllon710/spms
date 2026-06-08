@@ -1,30 +1,17 @@
 package com.spms.base;
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
-import org.springframework.util.StringUtils;
 
-import java.util.List;
-import java.util.function.Supplier;
+import static com.spms.common.util.ParamUtils.requireNotNull;
 
-public abstract class BaseService {
+public abstract class BaseService<E extends BaseEntity> {
     private static final int DEFAULT_PAGE_NUM = 1;
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 100;
 
-    protected <T> PageResult<T> getPage(PageRequest request, Supplier<List<T>> query) {
-        return getPage(request, query, null);
-    }
-
-    protected <T> PageResult<T> getPage(PageRequest request, Supplier<List<T>> query, SortParam sort) {
-        PageHelper.startPage(getPageNum(request), getPageSize(request));
-        return PageResult.from(new PageInfo<>(query.get()), sort);
-    }
-
-    protected void initAddEntity(BaseEntity entity) {
-        requireEntity(entity);
+    protected void initAddEntity(E entity) {
+        requireNotNull(entity, "请求参数不能为空");
         long now = System.currentTimeMillis();
         entity.setId(null);
         entity.setCreateTime(now);
@@ -33,51 +20,26 @@ public abstract class BaseService {
         entity.setIsPublished(false);
     }
 
-    protected void initUpdateEntity(BaseEntity entity) {
-        requireEntity(entity);
+    protected void initUpdateEntity(E entity) {
+        requireNotNull(entity, "请求参数不能为空");
         entity.setUpdateTime(System.currentTimeMillis());
     }
 
-    protected void checkEditable(BaseEntity entity) {
-        requireEntity(entity);
+    protected void checkEditable(E entity) {
+        requireNotNull(entity, "请求参数不能为空");
         if (Boolean.TRUE.equals(entity.getIsPublished())) {
             throw new AppException(CommonError.FORBIDDEN, "无法修改或删除已经发布的数据");
         }
     }
 
-    protected void requireEntity(Object entity) {
-        if (entity == null) {
-            throw new AppException(CommonError.PARAM_MISSING, "请求参数不能为空");
-        }
-    }
-
-    protected void requireId(Long id, String message) {
-        if (id == null) {
-            throw new AppException(CommonError.PARAM_MISSING, message);
-        }
-    }
-
-    protected void requireText(String value, String message) {
-        if (!StringUtils.hasText(value)) {
-            throw new AppException(CommonError.PARAM_MISSING, message);
-        }
-    }
-
-    protected String trimToNull(String value) {
-        if (!StringUtils.hasText(value)) {
-            return null;
-        }
-        return value.trim();
-    }
-
-    private int getPageNum(PageRequest request) {
+    protected int getPageNum(PageQuery<?> request) {
         if (request == null || request.pageNum() == null || request.pageNum() < 1) {
             return DEFAULT_PAGE_NUM;
         }
         return request.pageNum();
     }
 
-    private int getPageSize(PageRequest request) {
+    protected int getPageSize(PageQuery<?> request) {
         if (request == null || request.pageSize() == null || request.pageSize() < 1) {
             return DEFAULT_PAGE_SIZE;
         }

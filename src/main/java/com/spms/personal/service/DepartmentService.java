@@ -1,11 +1,12 @@
 package com.spms.personal.service;
 
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.personal.entity.DepartmentEntity;
-import com.spms.personal.model.DepartmentPageRequest;
+import com.spms.personal.model.DepartmentPageFilter;
 
-public interface DepartmentService {
-    PageResult<DepartmentEntity> getPage(DepartmentPageRequest request);
+public interface DepartmentService  {
+    PageResult<DepartmentEntity> getPage(PageQuery<DepartmentPageFilter> request);
 
     DepartmentEntity getDetail(Long id);
 

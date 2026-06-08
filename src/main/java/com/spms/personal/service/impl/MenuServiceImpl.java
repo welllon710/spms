@@ -1,15 +1,13 @@
 package com.spms.personal.service.impl;
 
 import com.spms.base.BaseService;
-import com.spms.base.PageResult;
-import com.spms.base.SortParam;
+import com.spms.base.PageQuery;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.common.util.TreeUtils;
 import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.mapper.MenuMapper;
 import com.spms.personal.model.MenuPageFilter;
-import com.spms.personal.model.MenuPageRequest;
 import com.spms.personal.service.MenuService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,18 +18,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.spms.common.util.ParamUtils.requireId;
+import static com.spms.common.util.ParamUtils.requireNotNull;
+import static com.spms.common.util.ParamUtils.requireText;
+import static com.spms.common.util.ParamUtils.trimToNull;
+
 @Service
 @RequiredArgsConstructor
-public class MenuServiceImpl extends BaseService implements MenuService {
-    private static final SortParam DEFAULT_SORT = new SortParam("orderNo", "asc");
-
+public class MenuServiceImpl extends BaseService<MenuEntity> implements MenuService {
     private final MenuMapper menuMapper;
 
     @Override
-    public List<MenuEntity> getPage(MenuPageRequest request) {
+    public List<MenuEntity> getPage(PageQuery<MenuPageFilter> request) {
         MenuPageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = new HashMap<>();
         params.put("name", trimToNull(filter == null ? null : filter.name()));
+        params.put("parentId", filter == null ? null : filter.parentId());
+        params.put("path", trimToNull(filter == null ? null : filter.path()));
+        params.put("component", trimToNull(filter == null ? null : filter.component()));
         params.put("isDisabled", filter == null ? null : filter.isDisabled());
         return TreeUtils.buildMenuTree(menuMapper.getPageList(params));
     }
@@ -92,7 +96,7 @@ public class MenuServiceImpl extends BaseService implements MenuService {
     }
 
     private void validateMenu(MenuEntity menu, boolean requireId) {
-        requireEntity(menu);
+        requireNotNull(menu, "请求参数不能为空");
         if (requireId && menu.getId() == null) {
             throw new AppException(CommonError.PARAM_MISSING, "菜单ID不能为空");
         }

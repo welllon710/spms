@@ -1,14 +1,11 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
-import com.spms.base.PageParam;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
 import com.spms.common.exception.AppException;
 import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.mapper.MenuMapper;
 import com.spms.personal.model.MenuPageFilter;
-import com.spms.personal.model.MenuPageRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,17 +42,19 @@ class MenuServiceImplTest {
     }
 
     @Test
-    void getPageUsesFilterAndReturnsCommonPageResult() {
-        Page<MenuEntity> page = new Page<>(1, 20);
-        page.setTotal(1);
-        page.add(new MenuEntity());
-        when(menuMapper.getPageList(anyMap())).thenReturn(page);
-        MenuPageRequest request = new MenuPageRequest(
+    void getPageUsesFilterAndReturnsMenuTree() {
+        MenuEntity menu = new MenuEntity();
+        menu.setId(1L);
+        menu.setParentId(0L);
+        menu.setOrderNo(1);
+        when(menuMapper.getPageList(anyMap())).thenReturn(List.of(menu));
+        PageQuery<MenuPageFilter> request = new PageQuery<>(
                 new MenuPageFilter(" system ", 0L, "/system", " Layout ", false),
-                new PageParam(1, 20)
+                1,
+                20
         );
 
-        PageResult<MenuEntity> result = menuService.getPage(request);
+        List<MenuEntity> result = menuService.getPage(request);
 
         ArgumentCaptor<Map<String, Object>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
         verify(menuMapper).getPageList(paramsCaptor.capture());
@@ -64,10 +64,8 @@ class MenuServiceImplTest {
                 .containsEntry("path", "/system")
                 .containsEntry("component", "Layout")
                 .containsEntry("isDisabled", false);
-        assertThat(result.total()).isEqualTo(1);
-        assertThat(result.pageCount()).isEqualTo(1);
-        assertThat(result.sort().field()).isEqualTo("orderNo");
-        assertThat(result.sort().direction()).isEqualTo("asc");
+        assertThat(result).containsExactly(menu);
+        assertThat(result.get(0).getChildren()).isEmpty();
     }
 
     @Test

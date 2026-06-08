@@ -1,28 +1,29 @@
 package com.spms.personal.model;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.spms.base.PageQuery;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class RolePageRequestTest {
+class PageQueryTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void deserializesCommonFilterPageRequest() throws Exception {
-        RolePageRequest request = objectMapper.readValue("""
+    void deserializesPageQuery() throws Exception {
+        PageQuery<RolePageFilter> request = objectMapper.readValue("""
                 {
                   "filter": {
                     "name": "admin",
                     "code": "ADMIN",
                     "isDisabled": false
                   },
-                  "page": {
-                    "pageNum": 1,
-                    "pageSize": 20
-                  }
+                  "pageNum": 1,
+                  "pageSize": 20
                 }
-                """, RolePageRequest.class);
+                """, new TypeReference<>() {
+        });
 
         assertThat(request.filter().name()).isEqualTo("admin");
         assertThat(request.filter().code()).isEqualTo("ADMIN");

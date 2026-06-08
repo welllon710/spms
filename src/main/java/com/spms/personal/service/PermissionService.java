@@ -1,11 +1,12 @@
 package com.spms.personal.service;
 
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.personal.entity.PermissionEntity;
-import com.spms.personal.model.PermissionPageRequest;
+import com.spms.personal.model.PermissionPageFilter;
 
 public interface PermissionService {
-    PageResult<PermissionEntity> getPage(PermissionPageRequest request);
+    PageResult<PermissionEntity> getPage(PageQuery<PermissionPageFilter> request);
 
     PermissionEntity getDetail(Long id);
 

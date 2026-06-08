@@ -2,11 +2,12 @@ package com.spms.personal.controller;
 
 import com.spms.base.Api;
 import com.spms.base.ApiController;
-import com.spms.base.PageResult;
+import com.spms.base.PageQuery;
+import com.spms.common.result.PageResult;
 import com.spms.common.result.Json;
 import com.spms.common.security.Permission;
 import com.spms.personal.entity.DepartmentEntity;
-import com.spms.personal.model.DepartmentPageRequest;
+import com.spms.personal.model.DepartmentPageFilter;
 import com.spms.personal.service.DepartmentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,7 @@ public class DepartmentController extends ApiController {
     private final DepartmentService departmentService;
 
     @PostMapping("/getPage")
-    public Json<PageResult<DepartmentEntity>> getPage(@RequestBody(required = false) DepartmentPageRequest request) {
+    public Json<PageResult<DepartmentEntity>> getPage(@RequestBody(required = false) PageQuery<DepartmentPageFilter> request) {
         return Json.data(departmentService.getPage(request));
     }
 
