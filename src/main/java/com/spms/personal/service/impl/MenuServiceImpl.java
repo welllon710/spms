@@ -5,6 +5,7 @@ import com.spms.base.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
+import com.spms.common.util.TreeUtils;
 import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.mapper.MenuMapper;
 import com.spms.personal.model.MenuPageFilter;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -26,15 +28,12 @@ public class MenuServiceImpl extends BaseService implements MenuService {
     private final MenuMapper menuMapper;
 
     @Override
-    public PageResult<MenuEntity> getPage(MenuPageRequest request) {
+    public List<MenuEntity> getPage(MenuPageRequest request) {
         MenuPageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = new HashMap<>();
         params.put("name", trimToNull(filter == null ? null : filter.name()));
-        params.put("parentId", filter == null ? null : filter.parentId());
-        params.put("path", trimToNull(filter == null ? null : filter.path()));
-        params.put("component", trimToNull(filter == null ? null : filter.component()));
         params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        return getPage(request, () -> menuMapper.getPageList(params), DEFAULT_SORT);
+        return TreeUtils.buildMenuTree(menuMapper.getPageList(params));
     }
 
     @Override

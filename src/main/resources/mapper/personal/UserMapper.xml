@@ -130,7 +130,7 @@
                m.order_no
         from menu m
         where coalesce(m.is_disabled, 0) = 0
-        order by m.order_no asc, m.id asc
+        order by m.order_no desc, m.id desc
     </select>
 
     <select id="getMenuListByUserId" resultMap="menuResultMap">

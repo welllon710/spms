@@ -118,6 +118,13 @@
             #{code}
         )
     </insert>
+    <insert id="authorizeMenu">
+        insert into role_menu_list (role_entity_id, menu_list_id)
+        values
+        <foreach collection="menuList" item="menu" separator=",">
+            (#{id}, #{menu.id})
+        </foreach>
+    </insert>
 
     <update id="update">
         update `role`
@@ -141,6 +148,9 @@
     <delete id="deleteById">
         delete from `role`
         where id = #{id}
+    </delete>
+    <delete id="deleteAuthorizeMenu">
+        delete from role_menu_list where role_entity_id = #{id}
     </delete>
 
     <select id="getMenuListByRoleId" resultMap="menuResultMap">

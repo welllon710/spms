@@ -49,7 +49,7 @@ public class UserController extends ApiController {
 
     }
 
-    @Permission(authorize = false)
+    @Permission(login = false,authorize = false)
     @PostMapping("/logout")
     public Json<String> logout() {
         userService.logout(getCurrentUserId());

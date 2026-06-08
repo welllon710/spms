@@ -4,8 +4,10 @@ import com.spms.base.PageResult;
 import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.model.MenuPageRequest;
 
+import java.util.List;
+
 public interface MenuService {
-    PageResult<MenuEntity> getPage(MenuPageRequest request);
+    List<MenuEntity> getPage(MenuPageRequest request);
 
     MenuEntity getDetail(Long id);
 

@@ -52,7 +52,7 @@
                 and is_disabled = #{isDisabled}
             </if>
         </where>
-        order by order_no asc, id asc
+        order by order_no desc
     </select>
 
     <select id="getById" resultMap="menuResultMap">

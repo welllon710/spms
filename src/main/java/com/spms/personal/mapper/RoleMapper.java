@@ -38,4 +38,8 @@ public interface RoleMapper {
     List<MenuEntity> getMenuListByRoleId(@Param("roleId") Long roleId);
 
     List<PermissionEntity> getPermissionListByRoleId(@Param("roleId") Long roleId);
+
+    void authorizeMenu(Long id, List<MenuEntity> menuList);
+
+    void deleteAuthorizeMenu(Long id);
 }

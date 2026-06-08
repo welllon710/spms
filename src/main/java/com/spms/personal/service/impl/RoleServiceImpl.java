@@ -5,6 +5,8 @@ import com.spms.base.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
+import com.spms.personal.dto.AuthorizeMenuDto;
+import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.entity.RoleEntity;
 import com.spms.personal.model.RolePageFilter;
 import com.spms.personal.mapper.RoleMapper;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -85,6 +88,24 @@ public class RoleServiceImpl extends BaseService implements RoleService {
         roleMapper.deletePermissionRelationsByRoleId(id);
         roleMapper.deleteById(id);
     }
+
+    @Override
+    @Transactional
+    public void authorizeMenu(AuthorizeMenuDto dto) {
+        Long id = dto.getId();
+        List<MenuEntity> menuList = dto.getMenuList();
+        if (id == null) {
+            throw new AppException(CommonError.PARAM_MISSING, "角色ID不能为空");
+        }
+        if (menuList == null || menuList.isEmpty()) {
+            throw new AppException(CommonError.PARAM_MISSING, "菜单列表不能为空");
+
+        }
+        roleMapper.deleteAuthorizeMenu(id);
+        roleMapper.authorizeMenu(id, menuList);
+    }
+
+
 
     private RoleEntity getRequiredRole(Long id) {
         requireId(id, "角色ID不能为空");

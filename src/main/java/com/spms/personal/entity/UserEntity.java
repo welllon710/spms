@@ -32,6 +32,7 @@ public class UserEntity extends BaseEntity {
 
     private List<RoleEntity> roleList;
 
+
     @JsonIgnore
     public final boolean isRootUser() {
         return Objects.nonNull(getId()) && getId() == 1L;

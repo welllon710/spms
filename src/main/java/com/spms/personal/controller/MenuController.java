@@ -12,14 +12,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.List;
+
 @Api("menu")
 @Permission
 @RequiredArgsConstructor
 public class MenuController extends ApiController {
     private final MenuService menuService;
 
-    @PostMapping("/getPage")
-    public Json<PageResult<MenuEntity>> getPage(@RequestBody(required = false) MenuPageRequest request) {
+    @PostMapping("/getList")
+    public Json<List<MenuEntity>> getPage(@RequestBody(required = false) MenuPageRequest request) {
         return Json.data(menuService.getPage(request));
     }
 

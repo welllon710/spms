@@ -6,12 +6,15 @@ import com.spms.base.ApiController;
 import com.spms.base.PageResult;
 import com.spms.common.result.Json;
 import com.spms.common.security.Permission;
+import com.spms.personal.dto.AuthorizeMenuDto;
 import com.spms.personal.entity.RoleEntity;
 import com.spms.personal.model.RolePageRequest;
 import com.spms.personal.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.Map;
 
 @Api("role")
 @Permission
@@ -22,6 +25,13 @@ public class RoleController extends ApiController {
     @PostMapping("/getPage")
     public Json<PageResult<RoleEntity>> getPage(@RequestBody(required = false) RolePageRequest request) {
         return Json.data(roleService.getPage(request));
+    }
+
+    @PostMapping("authorizeMenu")
+    public Json<String> authorizeMenu(@RequestBody AuthorizeMenuDto dto)  {
+        roleService.authorizeMenu(dto);
+
+        return Json.success("授权成功");
     }
 
     @PostMapping("/getDetail")
