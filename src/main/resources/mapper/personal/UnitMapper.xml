@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.personal.mapper.UnitMapper">
+    <resultMap id="unitResultMap" type="com.spms.personal.entity.UnitEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+    </resultMap>
+
+    <sql id="unitColumns">
+        id,
+        create_time,
+        update_time,
+        is_disabled,
+        is_published,
+        name,
+        code
+    </sql>
+
+    <select id="getPageList" resultMap="unitResultMap">
+        select
+        <include refid="unitColumns"/>
+        from `unit`
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name}, '%')
+            </if>
+            <if test="code != null and code != ''">
+                and code like concat('%', #{code}, '%')
+            </if>
+            <if test="isDisabled != null">
+                and is_disabled = #{isDisabled}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="getById" resultMap="unitResultMap">
+        select
+        <include refid="unitColumns"/>
+        from `unit`
+        where id = #{id}
+        limit 1
+    </select>
+
+    <select id="countByNameOrCode" resultType="int">
+        select count(1)
+        from `unit`
+        where (name = #{name} or code = #{code})
+        <if test="excludeId != null">
+            and id != #{excludeId}
+        </if>
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into `unit` (
+            create_time,
+            update_time,
+            is_disabled,
+            is_published,
+            name,
+            code
+        )
+        values (
+            #{createTime},
+            #{updateTime},
+            #{isDisabled},
+            #{isPublished},
+            #{name},
+            #{code}
+        )
+    </insert>
+
+    <update id="update">
+        update `unit`
+        set update_time = #{updateTime},
+            name = #{name},
+            code = #{code},
+            is_disabled = #{isDisabled}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        delete from `unit`
+        where id = #{id}
+    </delete>
+</mapper>
