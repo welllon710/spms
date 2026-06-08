@@ -29,10 +29,16 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
 
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true
+  support-methods-arguments: true
+
 app:
   project-name: spms
   login-header: Authorization
   access-token-secret: "1234567890"
+  login-token-expire-second: 86400
   redis:
     prefix: "spms:"
     cache-expire-second: 86400

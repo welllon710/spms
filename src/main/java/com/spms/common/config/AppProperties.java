@@ -11,4 +11,5 @@ public class AppProperties {
     private String projectName = "spms";
     private String loginHeader = "Authorization";
     private String accessTokenSecret = "1234567890";
+    private long loginTokenExpireSecond = 86400;
 }

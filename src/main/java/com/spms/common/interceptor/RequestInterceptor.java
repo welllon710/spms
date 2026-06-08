@@ -4,6 +4,7 @@ import com.spms.common.config.AppProperties;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.common.security.Access;
+import com.spms.common.security.LoginSessionService;
 import com.spms.common.security.PermissionUtil;
 import com.spms.common.security.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -18,6 +19,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class RequestInterceptor implements HandlerInterceptor {
     private final AppProperties appProperties;
     private final TokenService tokenService;
+    private final LoginSessionService loginSessionService;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -33,6 +35,7 @@ public class RequestInterceptor implements HandlerInterceptor {
             throw new AppException(CommonError.UNAUTHORIZED);
         }
         long userId = tokenService.verify(token);
+        loginSessionService.verify(userId, token);
         if (access.isAuthorize()) {
             checkUserPermission(userId, PermissionUtil.getPermissionIdentity(handlerMethod.getBeanType(), handlerMethod.getMethod()));
         }
