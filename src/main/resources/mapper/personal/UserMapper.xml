@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.personal.mapper.UserMapper">
+    <resultMap id="roleResultMap" type="com.spms.personal.entity.RoleEntity">
+        <id column="role_id" property="id"/>
+        <result column="role_is_disabled" property="isDisabled"/>
+        <result column="role_name" property="name"/>
+        <result column="role_code" property="code"/>
+    </resultMap>
+
+    <resultMap id="permissionResultMap" type="com.spms.personal.entity.PermissionEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="identity" property="identity"/>
+        <result column="name" property="name"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="type" property="type"/>
+        <result column="is_system" property="isSystem"/>
+    </resultMap>
+
+    <resultMap id="menuResultMap" type="com.spms.personal.entity.MenuEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="name" property="name"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="path" property="path"/>
+        <result column="component" property="component"/>
+        <result column="icon" property="icon"/>
+        <result column="order_no" property="orderNo"/>
+    </resultMap>
+
+    <resultMap id="userWithRoleListResultMap" type="com.spms.personal.entity.UserEntity">
+        <id column="user_id" property="id"/>
+        <result column="user_create_time" property="createTime"/>
+        <result column="user_update_time" property="updateTime"/>
+        <result column="user_is_disabled" property="isDisabled"/>
+        <result column="user_is_published" property="isPublished"/>
+        <result column="user_avatar" property="avatar"/>
+        <result column="user_email" property="email"/>
+        <result column="user_gender" property="gender"/>
+        <result column="user_id_card" property="idCard"/>
+        <result column="user_nickname" property="nickname"/>
+        <result column="user_phone" property="phone"/>
+        <result column="user_real_name" property="realName"/>
+        <collection property="roleList" resultMap="roleResultMap"/>
+    </resultMap>
+
+    <select id="getById" resultMap="userWithRoleListResultMap">
+        select u.id           as user_id,
+               u.create_time  as user_create_time,
+               u.update_time  as user_update_time,
+               u.is_disabled  as user_is_disabled,
+               u.is_published as user_is_published,
+               u.avatar       as user_avatar,
+               u.email        as user_email,
+               u.gender       as user_gender,
+               u.id_card      as user_id_card,
+               u.nickname     as user_nickname,
+               u.phone        as user_phone,
+               u.real_name    as user_real_name,
+               r.id           as role_id,
+               r.is_disabled  as role_is_disabled,
+               r.name         as role_name,
+               r.code         as role_code
+        from `user` u
+                 left join user_role_list ur on ur.user_entity_id = u.id
+                 left join role r on r.id = ur.role_list_id
+        where u.id = #{id}
+    </select>
+
+    <select id="getPermissionListByRoleId" resultMap="permissionResultMap">
+        select distinct p.id,
+                        p.create_time,
+                        p.update_time,
+                        p.is_disabled,
+                        p.is_published,
+                        p.identity,
+                        p.name,
+                        p.parent_id,
+                        p.type,
+                        p.is_system
+        from role r
+                 join role_permission_list rp on rp.role_entity_id = r.id
+                 join permission p on p.id = rp.permission_list_id
+        where r.id = #{roleId}
+          and coalesce(r.is_disabled, 0) = 0
+          and coalesce(p.is_disabled, 0) = 0
+        order by p.id asc
+    </select>
+
+    <select id="getAllPermissionIdentityList" resultType="java.lang.String">
+        select p.identity
+        from permission p
+        where coalesce(p.is_disabled, 0) = 0
+        order by p.id asc
+    </select>
+
+    <select id="getPermissionIdentityListByUserId" resultType="java.lang.String">
+        select p.identity
+        from user_role_list ur
+                 join role r on r.id = ur.role_list_id
+                 join role_permission_list rp on rp.role_entity_id = r.id
+                 join permission p on p.id = rp.permission_list_id
+        where ur.user_entity_id = #{userId}
+          and coalesce(r.is_disabled, 0) = 0
+          and coalesce(p.is_disabled, 0) = 0
+        group by p.id, p.identity
+        order by p.id asc
+    </select>
+
+    <select id="getAllMenuList" resultMap="menuResultMap">
+        select m.id,
+               m.create_time,
+               m.update_time,
+               m.is_disabled,
+               m.is_published,
+               m.name,
+               m.parent_id,
+               m.path,
+               m.component,
+               m.icon,
+               m.order_no
+        from menu m
+        where coalesce(m.is_disabled, 0) = 0
+        order by m.order_no asc, m.id asc
+    </select>
+
+    <select id="getMenuListByUserId" resultMap="menuResultMap">
+        select distinct m.id,
+                        m.create_time,
+                        m.update_time,
+                        m.is_disabled,
+                        m.is_published,
+                        m.name,
+                        m.parent_id,
+                        m.path,
+                        m.component,
+                        m.icon,
+                        m.order_no
+        from user_role_list ur
+                 join role r on r.id = ur.role_list_id
+                 join role_menu_list rm on rm.role_entity_id = r.id
+                 join menu m on m.id = rm.menu_list_id
+        where ur.user_entity_id = #{userId}
+          and coalesce(r.is_disabled, 0) = 0
+          and coalesce(m.is_disabled, 0) = 0
+        order by m.order_no asc, m.id asc
+    </select>
+</mapper>

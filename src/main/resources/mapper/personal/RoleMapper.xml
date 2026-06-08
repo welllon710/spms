@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.personal.mapper.RoleMapper">
+    <resultMap id="roleResultMap" type="com.spms.personal.entity.RoleEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+    </resultMap>
+
+    <resultMap id="menuResultMap" type="com.spms.personal.entity.MenuEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="name" property="name"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="path" property="path"/>
+        <result column="component" property="component"/>
+        <result column="icon" property="icon"/>
+        <result column="order_no" property="orderNo"/>
+    </resultMap>
+
+    <resultMap id="permissionResultMap" type="com.spms.personal.entity.PermissionEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="identity" property="identity"/>
+        <result column="name" property="name"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="type" property="type"/>
+        <result column="is_system" property="isSystem"/>
+    </resultMap>
+
+    <sql id="roleColumns">
+        id,
+        create_time,
+        update_time,
+        is_disabled,
+        is_published,
+        name,
+        code
+    </sql>
+
+    <select id="getPageList" resultMap="roleResultMap">
+        select
+        <include refid="roleColumns"/>
+        from `role`
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name}, '%')
+            </if>
+            <if test="code != null and code != ''">
+                and code like concat('%', #{code}, '%')
+            </if>
+            <if test="isDisabled != null">
+                and is_disabled = #{isDisabled}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="getById" resultMap="roleResultMap">
+        select
+        <include refid="roleColumns"/>
+        from `role`
+        where id = #{id}
+        limit 1
+    </select>
+
+    <select id="countByNameOrCode" resultType="int">
+        select count(1)
+        from `role`
+        where (name = #{name} or code = #{code})
+        <if test="excludeId != null">
+            and id != #{excludeId}
+        </if>
+    </select>
+
+    <select id="countUserRoleByRoleId" resultType="int">
+        select count(1)
+        from user_role_list
+        where role_list_id = #{roleId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into `role` (
+            create_time,
+            update_time,
+            is_disabled,
+            is_published,
+            name,
+            code
+        )
+        values (
+            #{createTime},
+            #{updateTime},
+            #{isDisabled},
+            #{isPublished},
+            #{name},
+            #{code}
+        )
+    </insert>
+
+    <update id="update">
+        update `role`
+        set update_time = #{updateTime},
+            name = #{name},
+            code = #{code},
+            is_disabled = #{isDisabled}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteMenuRelationsByRoleId">
+        delete from role_menu_list
+        where role_entity_id = #{roleId}
+    </delete>
+
+    <delete id="deletePermissionRelationsByRoleId">
+        delete from role_permission_list
+        where role_entity_id = #{roleId}
+    </delete>
+
+    <delete id="deleteById">
+        delete from `role`
+        where id = #{id}
+    </delete>
+
+    <select id="getMenuListByRoleId" resultMap="menuResultMap">
+        select m.id,
+               m.create_time,
+               m.update_time,
+               m.is_disabled,
+               m.is_published,
+               m.name,
+               m.parent_id,
+               m.path,
+               m.component,
+               m.icon,
+               m.order_no
+        from role_menu_list rm
+                 join menu m on m.id = rm.menu_list_id
+        where rm.role_entity_id = #{roleId}
+        order by m.order_no asc, m.id asc
+    </select>
+
+    <select id="getPermissionListByRoleId" resultMap="permissionResultMap">
+        select p.id,
+               p.create_time,
+               p.update_time,
+               p.is_disabled,
+               p.is_published,
+               p.identity,
+               p.name,
+               p.parent_id,
+               p.type,
+               p.is_system
+        from role_permission_list rp
+                 join permission p on p.id = rp.permission_list_id
+        where rp.role_entity_id = #{roleId}
+        order by p.id asc
+    </select>
+</mapper>
