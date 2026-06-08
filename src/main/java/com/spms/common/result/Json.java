@@ -15,6 +15,9 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Json<T> {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    public static final int SUCCESS_CODE = 200;
+    public static final int SERVICE_ERROR = 500;
+    public static final int UNAUTHORIZED_CODE = 401;
 
     private int code;
     private String message;
@@ -26,7 +29,7 @@ public class Json<T> {
 
     public static <T> Json<T> data(T data, String message) {
         return new Json<T>()
-                .setCode(0)
+                .setCode(SUCCESS_CODE)
                 .setMessage(message)
                 .setData(data);
     }

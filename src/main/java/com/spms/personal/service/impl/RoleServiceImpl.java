@@ -1,16 +1,19 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.PageInfo;
 import com.spms.base.BaseService;
+import com.spms.base.PageResult;
+import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.personal.entity.RoleEntity;
+import com.spms.personal.model.RolePageFilter;
 import com.spms.personal.mapper.RoleMapper;
 import com.spms.personal.model.RolePageRequest;
 import com.spms.personal.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,15 +21,20 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class RoleServiceImpl extends BaseService implements RoleService {
+    private static final SortParam DEFAULT_SORT = new SortParam("id", "desc");
+    private static final String ROLE_CODE_PREFIX = "RO";
+    private static final int ROLE_CODE_SERIAL_LENGTH = 4;
+
     private final RoleMapper roleMapper;
 
     @Override
-    public PageInfo<RoleEntity> getPage(RolePageRequest request) {
+    public PageResult<RoleEntity> getPage(RolePageRequest request) {
+        RolePageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = new HashMap<>();
-        params.put("name", trimToNull(request == null ? null : request.name()));
-        params.put("code", trimToNull(request == null ? null : request.code()));
-        params.put("isDisabled", request == null ? null : request.isDisabled());
-        return getPage(request, () -> roleMapper.getPageList(params));
+        params.put("name", trimToNull(filter == null ? null : filter.name()));
+        params.put("code", trimToNull(filter == null ? null : filter.code()));
+        params.put("isDisabled", filter == null ? null : filter.isDisabled());
+        return getPage(request, () -> roleMapper.getPageList(params), DEFAULT_SORT);
     }
 
     @Override
@@ -42,6 +50,9 @@ public class RoleServiceImpl extends BaseService implements RoleService {
     public RoleEntity add(RoleEntity role) {
         validateRole(role, false);
         initAddEntity(role);
+        if (!StringUtils.hasText(role.getCode())) {
+            role.setCode(generateRoleCode());
+        }
         checkDuplicate(role.getName(), role.getCode(), null);
         roleMapper.insert(role);
         return role;
@@ -92,13 +103,22 @@ public class RoleServiceImpl extends BaseService implements RoleService {
         role.setName(trimToNull(role.getName()));
         role.setCode(trimToNull(role.getCode()));
         requireText(role.getName(), "角色名称不能为空");
-        requireText(role.getCode(), "角色编码不能为空");
+//        requireText(role.getCode(), "角色编码不能为空");
     }
 
     private void checkDuplicate(String name, String code, Long excludeId) {
         if (roleMapper.countByNameOrCode(name, code, excludeId) > 0) {
             throw new AppException(CommonError.PARAM_INVALID, "角色名称或编码已存在");
         }
+    }
+
+    private String generateRoleCode() {
+        String latestCode = roleMapper.getLatestGeneratedRoleCodeForUpdate(ROLE_CODE_PREFIX);
+        int nextSerial = 1;
+        if (StringUtils.hasText(latestCode)) {
+            nextSerial = Integer.parseInt(latestCode.substring(ROLE_CODE_PREFIX.length())) + 1;
+        }
+        return ROLE_CODE_PREFIX + String.format("%0" + ROLE_CODE_SERIAL_LENGTH + "d", nextSerial);
     }
 
 }

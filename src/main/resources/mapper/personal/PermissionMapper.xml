@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.personal.mapper.PermissionMapper">
+    <resultMap id="permissionResultMap" type="com.spms.personal.entity.PermissionEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="identity" property="identity"/>
+        <result column="name" property="name"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="type" property="type"/>
+        <result column="is_system" property="isSystem"/>
+    </resultMap>
+
+    <sql id="permissionColumns">
+        id,
+        create_time,
+        update_time,
+        is_disabled,
+        is_published,
+        identity,
+        name,
+        parent_id,
+        type,
+        is_system
+    </sql>
+
+    <select id="getPageList" resultMap="permissionResultMap">
+        select
+        <include refid="permissionColumns"/>
+        from permission
+        <where>
+            <if test="identity != null and identity != ''">
+                and identity like concat('%', #{identity}, '%')
+            </if>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name}, '%')
+            </if>
+            <if test="parentId != null">
+                and parent_id = #{parentId}
+            </if>
+            <if test="type != null">
+                and type = #{type}
+            </if>
+            <if test="isSystem != null">
+                and is_system = #{isSystem}
+            </if>
+            <if test="isDisabled != null">
+                and is_disabled = #{isDisabled}
+            </if>
+        </where>
+        order by id asc
+    </select>
+
+    <select id="getById" resultMap="permissionResultMap">
+        select
+        <include refid="permissionColumns"/>
+        from permission
+        where id = #{id}
+        limit 1
+    </select>
+
+    <select id="countByIdentityOrName" resultType="int">
+        select count(1)
+        from permission
+        where (identity = #{identity} or name = #{name})
+        <if test="excludeId != null">
+            and id != #{excludeId}
+        </if>
+    </select>
+
+    <select id="countByParentId" resultType="int">
+        select count(1)
+        from permission
+        where parent_id = #{parentId}
+    </select>
+
+    <select id="countRolePermissionByPermissionId" resultType="int">
+        select count(1)
+        from role_permission_list
+        where permission_list_id = #{permissionId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into permission (
+            create_time,
+            update_time,
+            is_disabled,
+            is_published,
+            identity,
+            name,
+            parent_id,
+            type,
+            is_system
+        )
+        values (
+            #{createTime},
+            #{updateTime},
+            #{isDisabled},
+            #{isPublished},
+            #{identity},
+            #{name},
+            #{parentId},
+            #{type},
+            #{isSystem}
+        )
+    </insert>
+
+    <update id="update">
+        update permission
+        set update_time = #{updateTime},
+            is_disabled = #{isDisabled},
+            identity = #{identity},
+            name = #{name},
+            parent_id = #{parentId},
+            type = #{type},
+            is_system = #{isSystem}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        delete from permission
+        where id = #{id}
+    </delete>
+</mapper>

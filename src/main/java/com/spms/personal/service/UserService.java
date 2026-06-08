@@ -13,6 +13,8 @@ public interface UserService {
 
     String login(UserLoginRequest request);
 
+    void logout(long currentUserId);
+
     List<String> getMyPermissionList(long currentUserId);
 
     List<MenuEntity> getMyMenuList(long currentUserId);

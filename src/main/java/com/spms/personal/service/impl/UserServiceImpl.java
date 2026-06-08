@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -75,11 +74,22 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public void logout(long currentUserId) {
+        loginSessionService.delete(currentUserId);
+        redisHelper.delete(getUserPermissionCacheKey(currentUserId));
+        redisHelper.delete(getUserMenuCacheKey(currentUserId));
+    }
+
+    @Override
     public List<String> getMyPermissionList(long currentUserId) {
         String userPermissionCacheKey = getUserPermissionCacheKey(currentUserId);
         Object permissionIdentityList = redisHelper.get(userPermissionCacheKey);
         if (Objects.nonNull(permissionIdentityList)) {
-            return Json.parseList(permissionIdentityList.toString(), String[].class);
+            try {
+                return Json.parseList(permissionIdentityList.toString(), String[].class);
+            } catch (IllegalArgumentException exception) {
+                redisHelper.delete(userPermissionCacheKey);
+            }
         }
         UserEntity userEntity = userMapper.getById(currentUserId);
         List<String> permissionList;
@@ -91,7 +101,7 @@ public class UserServiceImpl implements UserService {
         } else  {
             permissionList = userMapper.getPermissionIdentityListByUserId(currentUserId);
         }
-        redisHelper.set(userPermissionCacheKey,permissionList.toString());
+        redisHelper.set(userPermissionCacheKey, permissionList);
         return permissionList;
     }
 

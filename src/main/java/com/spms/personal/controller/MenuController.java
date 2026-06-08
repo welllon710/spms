@@ -1,0 +1,50 @@
+package com.spms.personal.controller;
+
+import com.spms.base.Api;
+import com.spms.base.ApiController;
+import com.spms.base.PageResult;
+import com.spms.common.result.Json;
+import com.spms.common.security.Permission;
+import com.spms.personal.entity.MenuEntity;
+import com.spms.personal.model.MenuPageRequest;
+import com.spms.personal.service.MenuService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+@Api("menu")
+@Permission
+@RequiredArgsConstructor
+public class MenuController extends ApiController {
+    private final MenuService menuService;
+
+    @PostMapping("/getPage")
+    public Json<PageResult<MenuEntity>> getPage(@RequestBody(required = false) MenuPageRequest request) {
+        return Json.data(menuService.getPage(request));
+    }
+
+    @PostMapping("/getDetail")
+    public Json<MenuEntity> getDetail(@RequestBody MenuEntity menu) {
+        return Json.data(menuService.getDetail(getMenuId(menu)));
+    }
+
+    @PostMapping("/add")
+    public Json<MenuEntity> add(@RequestBody MenuEntity menu) {
+        return Json.data(menuService.add(menu), "新增成功");
+    }
+
+    @PostMapping("/update")
+    public Json<MenuEntity> update(@RequestBody MenuEntity menu) {
+        return Json.data(menuService.update(menu), "修改成功");
+    }
+
+    @PostMapping("/delete")
+    public Json<String> delete(@RequestBody MenuEntity menu) {
+        menuService.delete(getMenuId(menu));
+        return Json.success("删除成功");
+    }
+
+    private Long getMenuId(MenuEntity menu) {
+        return menu == null ? null : menu.getId();
+    }
+}

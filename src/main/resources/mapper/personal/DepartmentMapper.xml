@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.personal.mapper.DepartmentMapper">
+    <resultMap id="departmentResultMap" type="com.spms.personal.entity.DepartmentEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="name" property="name"/>
+        <result column="code" property="code"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="order_no" property="orderNo"/>
+    </resultMap>
+
+    <sql id="departmentColumns">
+        id,
+        create_time,
+        update_time,
+        is_disabled,
+        is_published,
+        name,
+        code,
+        parent_id,
+        order_no
+    </sql>
+
+    <select id="getPageList" resultMap="departmentResultMap">
+        select
+        <include refid="departmentColumns"/>
+        from department
+        <where>
+            <if test="name != null and name != ''">
+                and name like concat('%', #{name}, '%')
+            </if>
+            <if test="code != null and code != ''">
+                and code like concat('%', #{code}, '%')
+            </if>
+            <if test="parentId != null">
+                and parent_id = #{parentId}
+            </if>
+            <if test="isDisabled != null">
+                and is_disabled = #{isDisabled}
+            </if>
+        </where>
+        order by order_no asc, id asc
+    </select>
+
+    <select id="getById" resultMap="departmentResultMap">
+        select
+        <include refid="departmentColumns"/>
+        from department
+        where id = #{id}
+        limit 1
+    </select>
+
+    <select id="countByNameOrCode" resultType="int">
+        select count(1)
+        from department
+        where (name = #{name} or code = #{code})
+        <if test="excludeId != null">
+            and id != #{excludeId}
+        </if>
+    </select>
+
+    <select id="countByParentId" resultType="int">
+        select count(1)
+        from department
+        where parent_id = #{parentId}
+    </select>
+
+    <select id="countUserDepartmentByDepartmentId" resultType="int">
+        select count(1)
+        from user_department_list
+        where department_list_id = #{departmentId}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into department (
+            create_time,
+            update_time,
+            is_disabled,
+            is_published,
+            name,
+            code,
+            parent_id,
+            order_no
+        )
+        values (
+            #{createTime},
+            #{updateTime},
+            #{isDisabled},
+            #{isPublished},
+            #{name},
+            #{code},
+            #{parentId},
+            #{orderNo}
+        )
+    </insert>
+
+    <update id="update">
+        update department
+        set update_time = #{updateTime},
+            is_disabled = #{isDisabled},
+            name = #{name},
+            code = #{code},
+            parent_id = #{parentId},
+            order_no = #{orderNo}
+        where id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        delete from department
+        where id = #{id}
+    </delete>
+</mapper>

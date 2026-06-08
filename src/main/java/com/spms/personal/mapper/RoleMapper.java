@@ -15,6 +15,8 @@ public interface RoleMapper {
 
     RoleEntity getById(@Param("id") Long id);
 
+    String getLatestGeneratedRoleCodeForUpdate(@Param("prefix") String prefix);
+
     int countByNameOrCode(
             @Param("name") String name,
             @Param("code") String code,

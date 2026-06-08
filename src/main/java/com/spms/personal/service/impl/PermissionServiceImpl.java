@@ -1,0 +1,131 @@
+package com.spms.personal.service.impl;
+
+import com.spms.base.BaseService;
+import com.spms.base.PageResult;
+import com.spms.base.SortParam;
+import com.spms.common.exception.AppException;
+import com.spms.common.exception.CommonError;
+import com.spms.personal.entity.PermissionEntity;
+import com.spms.personal.mapper.PermissionMapper;
+import com.spms.personal.model.PermissionPageFilter;
+import com.spms.personal.model.PermissionPageRequest;
+import com.spms.personal.service.PermissionService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+@Service
+@RequiredArgsConstructor
+public class PermissionServiceImpl extends BaseService implements PermissionService {
+    private static final SortParam DEFAULT_SORT = new SortParam("id", "asc");
+
+    private final PermissionMapper permissionMapper;
+
+    @Override
+    public PageResult<PermissionEntity> getPage(PermissionPageRequest request) {
+        PermissionPageFilter filter = request == null ? null : request.filter();
+        Map<String, Object> params = new HashMap<>();
+        params.put("identity", trimToNull(filter == null ? null : filter.identity()));
+        params.put("name", trimToNull(filter == null ? null : filter.name()));
+        params.put("parentId", filter == null ? null : filter.parentId());
+        params.put("type", filter == null ? null : filter.type());
+        params.put("isSystem", filter == null ? null : filter.isSystem());
+        params.put("isDisabled", filter == null ? null : filter.isDisabled());
+        return getPage(request, () -> permissionMapper.getPageList(params), DEFAULT_SORT);
+    }
+
+    @Override
+    public PermissionEntity getDetail(Long id) {
+        return getRequiredPermission(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PermissionEntity add(PermissionEntity permission) {
+        validatePermission(permission, false);
+        initAddEntity(permission);
+        permission.setIsSystem(Boolean.TRUE.equals(permission.getIsSystem()));
+        checkParentExists(permission.getParentId(), null);
+        checkDuplicate(permission.getIdentity(), permission.getName(), null);
+        permissionMapper.insert(permission);
+        return permission;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PermissionEntity update(PermissionEntity permission) {
+        validatePermission(permission, true);
+        PermissionEntity exist = getRequiredPermission(permission.getId());
+        checkEditable(exist);
+        checkParentExists(permission.getParentId(), permission.getId());
+        checkDuplicate(permission.getIdentity(), permission.getName(), permission.getId());
+        initUpdateEntity(permission);
+        if (permission.getIsDisabled() == null) {
+            permission.setIsDisabled(exist.getIsDisabled());
+        }
+        if (permission.getIsSystem() == null) {
+            permission.setIsSystem(exist.getIsSystem());
+        }
+        permissionMapper.update(permission);
+        return getDetail(permission.getId());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(Long id) {
+        PermissionEntity exist = getRequiredPermission(id);
+        checkEditable(exist);
+        if (Boolean.TRUE.equals(exist.getIsSystem())) {
+            throw new AppException(CommonError.FORBIDDEN, "系统权限不能删除");
+        }
+        if (permissionMapper.countByParentId(id) > 0) {
+            throw new AppException(CommonError.FORBIDDEN_DELETE_USED, "权限存在子权限，不能删除");
+        }
+        if (permissionMapper.countRolePermissionByPermissionId(id) > 0) {
+            throw new AppException(CommonError.FORBIDDEN_DELETE_USED, "权限正在被角色使用，不能删除");
+        }
+        permissionMapper.deleteById(id);
+    }
+
+    private PermissionEntity getRequiredPermission(Long id) {
+        requireId(id, "权限ID不能为空");
+        PermissionEntity permission = permissionMapper.getById(id);
+        if (permission == null) {
+            throw new AppException(CommonError.DATA_NOT_FOUND, "权限不存在");
+        }
+        return permission;
+    }
+
+    private void validatePermission(PermissionEntity permission, boolean requireId) {
+        requireEntity(permission);
+        if (requireId && permission.getId() == null) {
+            throw new AppException(CommonError.PARAM_MISSING, "权限ID不能为空");
+        }
+        permission.setIdentity(trimToNull(permission.getIdentity()));
+        permission.setName(trimToNull(permission.getName()));
+        requireText(permission.getIdentity(), "权限标识不能为空");
+        requireText(permission.getName(), "权限名称不能为空");
+    }
+
+    private void checkParentExists(Long parentId, Long currentPermissionId) {
+        if (parentId == null || parentId == 0L) {
+            return;
+        }
+        if (Objects.equals(parentId, currentPermissionId)) {
+            throw new AppException(CommonError.PARAM_INVALID, "上级权限不能是自己");
+        }
+        if (permissionMapper.getById(parentId) == null) {
+            throw new AppException(CommonError.PARAM_INVALID, "上级权限不存在");
+        }
+    }
+
+    private void checkDuplicate(String identity, String name, Long excludeId) {
+        if (permissionMapper.countByIdentityOrName(identity, name, excludeId) > 0) {
+            throw new AppException(CommonError.PARAM_INVALID, "权限标识或名称已存在");
+        }
+    }
+}

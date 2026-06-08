@@ -76,6 +76,15 @@
         limit 1
     </select>
 
+    <select id="getLatestGeneratedRoleCodeForUpdate" resultType="string">
+        select code
+        from `role`
+        where code regexp concat('^', #{prefix}, '[0-9]{4}$')
+        order by code desc
+        limit 1
+        for update
+    </select>
+
     <select id="countByNameOrCode" resultType="int">
         select count(1)
         from `role`

@@ -14,9 +14,13 @@ public abstract class BaseService {
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final int MAX_PAGE_SIZE = 100;
 
-    protected <T> PageInfo<T> getPage(PageRequest request, Supplier<List<T>> query) {
+    protected <T> PageResult<T> getPage(PageRequest request, Supplier<List<T>> query) {
+        return getPage(request, query, null);
+    }
+
+    protected <T> PageResult<T> getPage(PageRequest request, Supplier<List<T>> query, SortParam sort) {
         PageHelper.startPage(getPageNum(request), getPageSize(request));
-        return new PageInfo<>(query.get());
+        return PageResult.from(new PageInfo<>(query.get()), sort);
     }
 
     protected void initAddEntity(BaseEntity entity) {

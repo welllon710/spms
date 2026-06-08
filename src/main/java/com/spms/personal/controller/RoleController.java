@@ -1,9 +1,9 @@
 package com.spms.personal.controller;
 
 
-import com.github.pagehelper.PageInfo;
 import com.spms.base.Api;
 import com.spms.base.ApiController;
+import com.spms.base.PageResult;
 import com.spms.common.result.Json;
 import com.spms.common.security.Permission;
 import com.spms.personal.entity.RoleEntity;
@@ -20,7 +20,7 @@ public class RoleController extends ApiController {
     private final RoleService roleService;
 
     @PostMapping("/getPage")
-    public Json<PageInfo<RoleEntity>> getPage(@RequestBody(required = false) RolePageRequest request) {
+    public Json<PageResult<RoleEntity>> getPage(@RequestBody(required = false) RolePageRequest request) {
         return Json.data(roleService.getPage(request));
     }
 
