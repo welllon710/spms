@@ -1,5 +1,7 @@
 package com.spms.personal.mapper;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.entity.PermissionEntity;
 import com.spms.personal.entity.RoleEntity;
@@ -11,7 +13,7 @@ import java.util.Map;
 
 @Mapper
 public interface RoleMapper {
-    List<RoleEntity> getPageList(Map<String, Object> params);
+    IPage<RoleEntity> getPageList(Page<RoleEntity> page, @Param("params") Map<String, Object> params);
 
     RoleEntity getById(@Param("id") Long id);
 

@@ -1,14 +1,10 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
 import com.spms.base.PageQuery;
-import com.spms.common.result.PageResult;
 import com.spms.common.exception.AppException;
 import com.spms.personal.entity.DepartmentEntity;
 import com.spms.personal.mapper.DepartmentMapper;
 import com.spms.personal.model.DepartmentPageFilter;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,24 +34,20 @@ class DepartmentServiceImplTest {
         departmentService = new DepartmentServiceImpl(departmentMapper);
     }
 
-    @AfterEach
-    void tearDown() {
-        PageHelper.clearPage();
-    }
-
     @Test
-    void getPageUsesFilterAndReturnsCommonPageResult() {
-        Page<DepartmentEntity> page = new Page<>(1, 20);
-        page.setTotal(1);
-        page.add(new DepartmentEntity());
-        when(departmentMapper.getPageList(anyMap())).thenReturn(page);
+    void getPageUsesFilterAndReturnsDepartmentTree() {
+        DepartmentEntity department = new DepartmentEntity();
+        department.setId(1L);
+        department.setParentId(0L);
+        department.setOrderNo(1);
+        when(departmentMapper.getPageList(anyMap())).thenReturn(List.of(department));
         PageQuery<DepartmentPageFilter> request = new PageQuery<>(
                 new DepartmentPageFilter(" sales ", " D001 ", 0L, false),
                 1,
                 20
         );
 
-        PageResult<DepartmentEntity> result = departmentService.getPage(request);
+        List<DepartmentEntity> result = departmentService.getPage(request);
 
         ArgumentCaptor<Map<String, Object>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
         verify(departmentMapper).getPageList(paramsCaptor.capture());
@@ -63,10 +56,8 @@ class DepartmentServiceImplTest {
                 .containsEntry("code", "D001")
                 .containsEntry("parentId", 0L)
                 .containsEntry("isDisabled", false);
-        assertThat(result.total()).isEqualTo(1);
-        assertThat(result.pageCount()).isEqualTo(1);
-        assertThat(result.sort().field()).isEqualTo("orderNo");
-        assertThat(result.sort().direction()).isEqualTo("asc");
+        assertThat(result).containsExactly(department);
+        assertThat(result.get(0).getChildren()).isEmpty();
     }
 
     @Test

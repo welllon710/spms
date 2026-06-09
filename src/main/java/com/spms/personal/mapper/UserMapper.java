@@ -1,6 +1,8 @@
 package com.spms.personal.mapper;
 
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.entity.UserEntity;
 import com.spms.personal.entity.PermissionEntity;
@@ -31,7 +33,7 @@ public interface UserMapper {
 
     List<MenuEntity> getMenuListByUserId(@Param("userId") Long userId);
 
-    List<UserEntity> getPageList(Map<String, Object> params);
+    IPage<UserEntity> getPageList(Page<UserEntity> page, @Param("params") Map<String, Object> params);
 
 
 }

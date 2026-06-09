@@ -1,14 +1,12 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.PageQuery;
 import com.spms.common.result.PageResult;
 import com.spms.common.exception.AppException;
 import com.spms.personal.entity.UnitEntity;
 import com.spms.personal.mapper.UnitMapper;
 import com.spms.personal.model.UnitPageFilter;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,10 +15,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Map;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,18 +37,12 @@ class UnitServiceImplTest {
         unitService = new UnitServiceImpl(unitMapper);
     }
 
-    @AfterEach
-    void tearDown() {
-        PageHelper.clearPage();
-    }
-
     @Test
     void getPageTrimsFilterAndReturnsCommonPageResult() {
         Page<UnitEntity> page = new Page<>(1, 20);
         page.setTotal(2);
-        page.add(new UnitEntity());
-        page.add(new UnitEntity());
-        when(unitMapper.getPageList(anyMap())).thenReturn(page);
+        page.setRecords(List.of(new UnitEntity(), new UnitEntity()));
+        when(unitMapper.getPageList(any(Page.class), anyMap())).thenReturn(page);
         PageQuery<UnitPageFilter> request = new PageQuery<>(
                 new UnitPageFilter(" meter ", " M ", false),
                 1,
@@ -58,7 +52,7 @@ class UnitServiceImplTest {
         PageResult<UnitEntity> result = unitService.getPage(request);
 
         ArgumentCaptor<Map<String, Object>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(unitMapper).getPageList(paramsCaptor.capture());
+        verify(unitMapper).getPageList(any(Page.class), paramsCaptor.capture());
         assertThat(paramsCaptor.getValue())
                 .containsEntry("name", "meter")
                 .containsEntry("code", "M")

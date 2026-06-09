@@ -33,7 +33,7 @@ public abstract class BaseService<E extends BaseEntity> {
     }
 
     protected int getPageNum(PageQuery<?> request) {
-        Integer pageNum = request == null || request.page() == null ? null : request.page().pageNum();
+        Integer pageNum = request == null ? null : request.pageNum();
         if (pageNum == null || pageNum < 1) {
             return DEFAULT_PAGE_NUM;
         }
@@ -41,7 +41,7 @@ public abstract class BaseService<E extends BaseEntity> {
     }
 
     protected int getPageSize(PageQuery<?> request) {
-        Integer pageSize = request == null || request.page() == null ? null : request.page().pageSize();
+        Integer pageSize = request == null ? null : request.pageSize();
         if (pageSize == null || pageSize < 1) {
             return DEFAULT_PAGE_SIZE;
         }

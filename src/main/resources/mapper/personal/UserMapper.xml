@@ -171,12 +171,12 @@
         <include refid="userColumns"/>
         from `user` u
         <where>
-            <if test="departmentId != null">
+            <if test="params.departmentId != null">
                 and exists (
                     select 1
                     from user_department_list ud
                     where ud.user_entity_id = u.id
-                      and ud.department_list_id = #{departmentId}
+                      and ud.department_list_id = #{params.departmentId}
                 )
             </if>
         </where>

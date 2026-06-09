@@ -1,6 +1,6 @@
 package com.spms.common.result;
 
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.spms.base.SortParam;
 
 import java.util.List;
@@ -13,13 +13,13 @@ public record PageResult<T>(
         Integer pageSize,
         SortParam sort
 ) {
-    public static <T> PageResult<T> from(PageInfo<T> pageInfo, SortParam sort) {
+    public static <T> PageResult<T> from(IPage<T> page, SortParam sort) {
         return new PageResult<>(
-                pageInfo.getTotal(),
-                pageInfo.getPages(),
-                pageInfo.getList(),
-                pageInfo.getPageNum(),
-                pageInfo.getPageSize(),
+                page.getTotal(),
+                (int) page.getPages(),
+                page.getRecords(),
+                (int) page.getCurrent(),
+                (int) page.getSize(),
                 sort
         );
     }

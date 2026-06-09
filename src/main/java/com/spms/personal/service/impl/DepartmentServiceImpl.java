@@ -1,16 +1,12 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import com.spms.base.BaseService;
 import com.spms.base.PageQuery;
-import com.spms.common.result.PageResult;
-import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
+import com.spms.common.util.QueryParams;
 import com.spms.common.util.TreeUtils;
 import com.spms.personal.entity.DepartmentEntity;
-import com.spms.personal.entity.PermissionEntity;
 import com.spms.personal.mapper.DepartmentMapper;
 import com.spms.personal.model.DepartmentPageFilter;
 import com.spms.personal.service.DepartmentService;
@@ -18,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,19 +26,17 @@ import static com.spms.common.util.ParamUtils.trimToNull;
 @Service
 @RequiredArgsConstructor
 public class DepartmentServiceImpl extends BaseService<DepartmentEntity> implements DepartmentService {
-    private static final SortParam DEFAULT_SORT = new SortParam("orderNo", "asc");
-
     private final DepartmentMapper departmentMapper;
 
     @Override
     public List<DepartmentEntity> getPage(PageQuery<DepartmentPageFilter> request) {
         DepartmentPageFilter filter = request == null ? null : request.filter();
-        Map<String, Object> params = new HashMap<>();
-        params.put("name", trimToNull(filter == null ? null : filter.name()));
-        params.put("code", trimToNull(filter == null ? null : filter.code()));
-        params.put("parentId", filter == null ? null : filter.parentId());
-        params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        PageHelper.startPage(getPageNum(request), getPageSize(request));
+        Map<String, Object> params = QueryParams.of(filter)
+                .putTrim("name", DepartmentPageFilter::name)
+                .putTrim("code", DepartmentPageFilter::code)
+                .put("parentId", DepartmentPageFilter::parentId)
+                .put("isDisabled", DepartmentPageFilter::isDisabled)
+                .toMap();
         return TreeUtils.buildTree(
                 departmentMapper.getPageList(params),
                 DepartmentEntity::getId,

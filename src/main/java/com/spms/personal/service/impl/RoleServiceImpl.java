@@ -1,13 +1,13 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.BaseService;
 import com.spms.base.PageQuery;
 import com.spms.common.result.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
+import com.spms.common.util.QueryParams;
 import com.spms.personal.dto.AuthorizeMenuDto;
 import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.entity.RoleEntity;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,12 +39,13 @@ public class RoleServiceImpl extends BaseService<RoleEntity> implements RoleServ
     @Override
     public PageResult<RoleEntity> getPage(PageQuery<RolePageFilter> request) {
         RolePageFilter filter = request == null ? null : request.filter();
-        Map<String, Object> params = new HashMap<>();
-        params.put("name", trimToNull(filter == null ? null : filter.name()));
-        params.put("code", trimToNull(filter == null ? null : filter.code()));
-        params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        PageHelper.startPage(getPageNum(request), getPageSize(request));
-        return PageResult.from(new PageInfo<>(roleMapper.getPageList(params)), DEFAULT_SORT);
+        Map<String, Object> params = QueryParams.of(filter)
+                .putTrim("name", RolePageFilter::name)
+                .putTrim("code", RolePageFilter::code)
+                .put("isDisabled", RolePageFilter::isDisabled)
+                .toMap();
+        Page<RoleEntity> page = new Page<>(getPageNum(request), getPageSize(request));
+        return PageResult.from(roleMapper.getPageList(page, params), DEFAULT_SORT);
     }
 
     @Override

@@ -1,14 +1,10 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.Page;
-import com.github.pagehelper.PageHelper;
 import com.spms.base.PageQuery;
-import com.spms.common.result.PageResult;
 import com.spms.common.exception.AppException;
 import com.spms.personal.entity.PermissionEntity;
 import com.spms.personal.mapper.PermissionMapper;
 import com.spms.personal.model.PermissionPageFilter;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,24 +34,19 @@ class PermissionServiceImplTest {
         permissionService = new PermissionServiceImpl(permissionMapper);
     }
 
-    @AfterEach
-    void tearDown() {
-        PageHelper.clearPage();
-    }
-
     @Test
-    void getPageUsesFilterAndReturnsCommonPageResult() {
-        Page<PermissionEntity> page = new Page<>(1, 20);
-        page.setTotal(1);
-        page.add(new PermissionEntity());
-        when(permissionMapper.getPageList(anyMap())).thenReturn(page);
+    void getPageUsesFilterAndReturnsPermissionTree() {
+        PermissionEntity permission = new PermissionEntity();
+        permission.setId(1L);
+        permission.setParentId(0L);
+        when(permissionMapper.getPageList(anyMap())).thenReturn(List.of(permission));
         PageQuery<PermissionPageFilter> request = new PageQuery<>(
                 new PermissionPageFilter(" role:add ", " add ", 0L, 1, false, false),
                 1,
                 20
         );
 
-        PageResult<PermissionEntity> result = permissionService.getPage(request);
+        List<PermissionEntity> result = permissionService.getPage(request);
 
         ArgumentCaptor<Map<String, Object>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
         verify(permissionMapper).getPageList(paramsCaptor.capture());
@@ -65,10 +57,8 @@ class PermissionServiceImplTest {
                 .containsEntry("type", 1)
                 .containsEntry("isSystem", false)
                 .containsEntry("isDisabled", false);
-        assertThat(result.total()).isEqualTo(1);
-        assertThat(result.pageCount()).isEqualTo(1);
-        assertThat(result.sort().field()).isEqualTo("id");
-        assertThat(result.sort().direction()).isEqualTo("asc");
+        assertThat(result).containsExactly(permission);
+        assertThat(result.get(0).getChildren()).isEmpty();
     }
 
     @Test

@@ -55,14 +55,14 @@
         <include refid="roleColumns"/>
         from `role`
         <where>
-            <if test="name != null and name != ''">
-                and name like concat('%', #{name}, '%')
+            <if test="params.name != null and params.name != ''">
+                and name like concat('%', #{params.name}, '%')
             </if>
-            <if test="code != null and code != ''">
-                and code like concat('%', #{code}, '%')
+            <if test="params.code != null and params.code != ''">
+                and code like concat('%', #{params.code}, '%')
             </if>
-            <if test="isDisabled != null">
-                and is_disabled = #{isDisabled}
+            <if test="params.isDisabled != null">
+                and is_disabled = #{params.isDisabled}
             </if>
         </where>
         order by id desc

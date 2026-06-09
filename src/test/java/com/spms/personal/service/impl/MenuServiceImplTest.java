@@ -1,12 +1,10 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.PageHelper;
 import com.spms.base.PageQuery;
 import com.spms.common.exception.AppException;
 import com.spms.personal.entity.MenuEntity;
 import com.spms.personal.mapper.MenuMapper;
 import com.spms.personal.model.MenuPageFilter;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,11 +32,6 @@ class MenuServiceImplTest {
     @BeforeEach
     void setUp() {
         menuService = new MenuServiceImpl(menuMapper);
-    }
-
-    @AfterEach
-    void tearDown() {
-        PageHelper.clearPage();
     }
 
     @Test

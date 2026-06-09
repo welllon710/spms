@@ -1,13 +1,11 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.Page;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.common.result.PageResult;
 import com.spms.base.PageQuery;
 import com.spms.personal.mapper.RoleMapper;
 import com.spms.personal.entity.RoleEntity;
 import com.spms.personal.model.RolePageFilter;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +18,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -37,18 +36,12 @@ class RoleServiceImplTest {
         roleService = new RoleServiceImpl(roleMapper);
     }
 
-    @AfterEach
-    void tearDown() {
-        PageHelper.clearPage();
-    }
-
     @Test
     void getPageUsesCommonRequestAndReturnsCommonPageResult() {
         Page<RoleEntity> page = new Page<>(1, 20);
         page.setTotal(2);
-        page.add(new RoleEntity());
-        page.add(new RoleEntity());
-        when(roleMapper.getPageList(anyMap())).thenReturn(page);
+        page.setRecords(List.of(new RoleEntity(), new RoleEntity()));
+        when(roleMapper.getPageList(any(Page.class), anyMap())).thenReturn(page);
         PageQuery<RolePageFilter> request = new PageQuery<>(
                 new RolePageFilter(" admin ", " ADMIN ", false),
                 1,
@@ -58,7 +51,7 @@ class RoleServiceImplTest {
         PageResult<RoleEntity> result = roleService.getPage(request);
 
         ArgumentCaptor<Map<String, Object>> paramsCaptor = ArgumentCaptor.forClass(Map.class);
-        verify(roleMapper).getPageList(paramsCaptor.capture());
+        verify(roleMapper).getPageList(any(Page.class), paramsCaptor.capture());
         assertThat(paramsCaptor.getValue())
                 .containsEntry("name", "admin")
                 .containsEntry("code", "ADMIN")

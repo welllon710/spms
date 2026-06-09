@@ -1,8 +1,7 @@
 package com.spms.personal.service.impl;
 
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.BaseService;
 import com.spms.base.PageQuery;
 import com.spms.common.exception.AppException;
@@ -13,6 +12,7 @@ import com.spms.common.result.PageResult;
 import com.spms.common.security.LoginSessionService;
 import com.spms.common.security.PermissionUtil;
 import com.spms.common.security.TokenService;
+import com.spms.common.util.QueryParams;
 import com.spms.common.util.TreeUtils;
 import com.spms.personal.entity.DepartmentEntity;
 import com.spms.personal.entity.MenuEntity;
@@ -33,7 +33,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -167,11 +166,12 @@ public class UserServiceImpl extends BaseService<UserEntity> implements UserServ
 
     @Override
     public PageResult<UserEntity> getPage(PageQuery<UserPageFilter> request) {
-        PageHelper.startPage(getPageNum(request), getPageSize(request));
         UserPageFilter filter = request == null ? null : request.filter();
-        Map<String, Object> params = new HashMap<>();
-        params.put("departmentId", filter == null ? null : filter.departmentId());
-        return PageResult.from(new PageInfo<>(userMapper.getPageList(params)), null);
+        Map<String, Object> params = QueryParams.of(filter)
+                .put("departmentId", UserPageFilter::departmentId)
+                .toMap();
+        Page<UserEntity> page = new Page<>(getPageNum(request), getPageSize(request));
+        return PageResult.from(userMapper.getPageList(page, params), null);
     }
 
     @Override

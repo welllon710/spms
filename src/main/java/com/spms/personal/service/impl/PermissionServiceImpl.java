@@ -4,6 +4,7 @@ import com.spms.base.BaseService;
 import com.spms.base.PageQuery;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
+import com.spms.common.util.QueryParams;
 import com.spms.common.util.TreeUtils;
 import com.spms.personal.entity.PermissionEntity;
 import com.spms.personal.mapper.PermissionMapper;
@@ -13,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,13 +31,14 @@ public class PermissionServiceImpl extends BaseService<PermissionEntity> impleme
     @Override
     public List<PermissionEntity> getPage(PageQuery<PermissionPageFilter> request) {
         PermissionPageFilter filter = request == null ? null : request.filter();
-        Map<String, Object> params = new HashMap<>();
-        params.put("identity", trimToNull(filter == null ? null : filter.identity()));
-        params.put("name", trimToNull(filter == null ? null : filter.name()));
-        params.put("parentId", filter == null ? null : filter.parentId());
-        params.put("type", filter == null ? null : filter.type());
-        params.put("isSystem", filter == null ? null : filter.isSystem());
-        params.put("isDisabled", filter == null ? null : filter.isDisabled());
+        Map<String, Object> params = QueryParams.of(filter)
+                .putTrim("identity", PermissionPageFilter::identity)
+                .putTrim("name", PermissionPageFilter::name)
+                .put("parentId", PermissionPageFilter::parentId)
+                .put("type", PermissionPageFilter::type)
+                .put("isSystem", PermissionPageFilter::isSystem)
+                .put("isDisabled", PermissionPageFilter::isDisabled)
+                .toMap();
         List<PermissionEntity> pageList = permissionMapper.getPageList(params);
         return TreeUtils.buildTree(
                 pageList,

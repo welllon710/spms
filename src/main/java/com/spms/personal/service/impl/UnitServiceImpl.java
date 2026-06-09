@@ -1,13 +1,13 @@
 package com.spms.personal.service.impl;
 
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.BaseService;
 import com.spms.base.PageQuery;
 import com.spms.common.result.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
+import com.spms.common.util.QueryParams;
 import com.spms.personal.entity.UnitEntity;
 import com.spms.personal.mapper.UnitMapper;
 import com.spms.personal.model.UnitPageFilter;
@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import static com.spms.common.util.ParamUtils.requireId;
@@ -34,12 +33,13 @@ public class UnitServiceImpl extends BaseService<UnitEntity> implements UnitServ
     @Override
     public PageResult<UnitEntity> getPage(PageQuery<UnitPageFilter> request) {
         UnitPageFilter filter = request == null ? null : request.filter();
-        Map<String, Object> params = new HashMap<>();
-        params.put("name", trimToNull(filter == null ? null : filter.name()));
-        params.put("code", trimToNull(filter == null ? null : filter.code()));
-        params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        PageHelper.startPage(getPageNum(request), getPageSize(request));
-        return PageResult.from(new PageInfo<>(unitMapper.getPageList(params)), DEFAULT_SORT);
+        Map<String, Object> params = QueryParams.of(filter)
+                .putTrim("name", UnitPageFilter::name)
+                .putTrim("code", UnitPageFilter::code)
+                .put("isDisabled", UnitPageFilter::isDisabled)
+                .toMap();
+        Page<UnitEntity> page = new Page<>(getPageNum(request), getPageSize(request));
+        return PageResult.from(unitMapper.getPageList(page, params), DEFAULT_SORT);
     }
 
     @Override
