@@ -113,7 +113,8 @@
 
     <update id="update">
         update menu
-        set update_time = #{updateTime},
+        <set>
+            update_time = #{updateTime},
             is_disabled = #{isDisabled},
             name = #{name},
             parent_id = #{parentId},
@@ -121,6 +122,7 @@
             component = #{component},
             icon = #{icon},
             order_no = #{orderNo}
+        </set>
         where id = #{id}
     </update>
 

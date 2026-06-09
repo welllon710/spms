@@ -128,20 +128,22 @@
 
     <update id="update">
         update `role`
-        set update_time = #{updateTime},
+        <set>
+            update_time = #{updateTime},
             name = #{name},
             code = #{code},
             is_disabled = #{isDisabled}
+        </set>
         where id = #{id}
     </update>
 
-    <update id="updateUserRoleList">
+    <insert id="updateUserRoleList">
         insert into user_role_list (user_entity_id, role_list_id)
         values
         <foreach collection="roleIds" item="role" separator=",">
             (#{id}, #{role.id})
         </foreach>
-    </update>
+    </insert>
 
     <delete id="deleteMenuRelationsByRoleId">
         delete from role_menu_list

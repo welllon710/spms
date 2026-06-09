@@ -112,13 +112,15 @@
 
     <update id="update">
         update permission
-        set update_time = #{updateTime},
+        <set>
+            update_time = #{updateTime},
             is_disabled = #{isDisabled},
             identity = #{identity},
             name = #{name},
             parent_id = #{parentId},
             type = #{type},
             is_system = #{isSystem}
+        </set>
         where id = #{id}
     </update>
 

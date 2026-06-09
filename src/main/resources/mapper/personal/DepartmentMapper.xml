@@ -107,21 +107,23 @@
 
     <update id="update">
         update department
-        set update_time = #{updateTime},
+        <set>
+            update_time = #{updateTime},
             is_disabled = #{isDisabled},
             name = #{name},
             code = #{code},
             parent_id = #{parentId},
             order_no = #{orderNo}
+        </set>
         where id = #{id}
     </update>
-    <update id="updateUserDepartmentList">
+    <insert id="updateUserDepartmentList">
         insert into user_department_list (user_entity_id, department_list_id)
         values
         <foreach collection="departmentIds" item="depart" separator=",">
             (#{id}, #{depart.id})
         </foreach>
-    </update>
+    </insert>
 
     <delete id="deleteById">
         delete from department

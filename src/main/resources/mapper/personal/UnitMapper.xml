@@ -79,10 +79,12 @@
 
     <update id="update">
         update `unit`
-        set update_time = #{updateTime},
+        <set>
+            update_time = #{updateTime},
             name = #{name},
             code = #{code},
             is_disabled = #{isDisabled}
+        </set>
         where id = #{id}
     </update>
 
