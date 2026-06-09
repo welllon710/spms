@@ -42,4 +42,10 @@ public interface RoleMapper {
     void authorizeMenu(Long id, List<MenuEntity> menuList);
 
     void deleteAuthorizeMenu(Long id);
+
+    List<RoleEntity> getRoleByUserId(@Param("userId") Long id);
+
+    Integer updateUserRoleList(@Param("id") Long userId, @Param("roleIds") List<RoleEntity> roleIds);
+
+    void deleteUserRoleList(@Param("id") Long userId);
 }

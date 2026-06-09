@@ -33,16 +33,18 @@ public abstract class BaseService<E extends BaseEntity> {
     }
 
     protected int getPageNum(PageQuery<?> request) {
-        if (request == null || request.pageNum() == null || request.pageNum() < 1) {
+        Integer pageNum = request == null || request.page() == null ? null : request.page().pageNum();
+        if (pageNum == null || pageNum < 1) {
             return DEFAULT_PAGE_NUM;
         }
-        return request.pageNum();
+        return pageNum;
     }
 
     protected int getPageSize(PageQuery<?> request) {
-        if (request == null || request.pageSize() == null || request.pageSize() < 1) {
+        Integer pageSize = request == null || request.page() == null ? null : request.page().pageSize();
+        if (pageSize == null || pageSize < 1) {
             return DEFAULT_PAGE_SIZE;
         }
-        return Math.min(request.pageSize(), MAX_PAGE_SIZE);
+        return Math.min(pageSize, MAX_PAGE_SIZE);
     }
 }

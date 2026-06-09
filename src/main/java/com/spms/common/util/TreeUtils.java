@@ -1,52 +1,73 @@
 package com.spms.common.util;
 
-import com.spms.personal.entity.MenuEntity;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public final class TreeUtils {
     private TreeUtils() {
     }
 
-    public static List<MenuEntity> buildMenuTree(List<MenuEntity> menuList) {
-        if (menuList == null || menuList.isEmpty()) {
+    public static <T> List<T> buildTree(
+            List<T> sourceList,
+            Function<T, Long> idGetter,
+            Function<T, Long> parentIdGetter,
+            BiConsumer<T, List<T>> childrenSetter
+    ) {
+        return buildTree(sourceList, idGetter, parentIdGetter, childrenSetter, null);
+    }
+
+    public static <T> List<T> buildTree(
+            List<T> sourceList,
+            Function<T, Long> idGetter,
+            Function<T, Long> parentIdGetter,
+            BiConsumer<T, List<T>> childrenSetter,
+            Comparator<T> comparator
+    ) {
+        if (sourceList == null || sourceList.isEmpty()) {
             return List.of();
         }
 
-        List<MenuEntity> items = new ArrayList<>(menuList);
-        items.sort(Comparator.comparing(
-                        MenuEntity::getOrderNo,
-                        Comparator.nullsLast(Integer::compareTo)
-                )
-                .thenComparing(MenuEntity::getId, Comparator.nullsLast(Long::compareTo)));
+        List<T> items = new ArrayList<>(sourceList);
+        if (comparator != null) {
+            items.sort(comparator);
+        }
 
-        Map<Long, MenuEntity> itemMap = new LinkedHashMap<>();
-        Map<Long, List<MenuEntity>> childrenMap = new LinkedHashMap<>();
-        for (MenuEntity item : items) {
-            Long id = item.getId();
+        Map<Long, T> itemMap = new LinkedHashMap<>();
+        Map<Long, List<T>> childrenMap = new LinkedHashMap<>();
+        for (T item : items) {
+            Long id = idGetter.apply(item);
             itemMap.put(id, item);
             childrenMap.put(id, new ArrayList<>());
         }
 
-        List<MenuEntity> roots = new ArrayList<>();
-        for (MenuEntity item : items) {
-            Long parentId = item.getParentId();
-            MenuEntity parent = itemMap.get(parentId);
+        List<T> roots = new ArrayList<>();
+        for (T item : items) {
+            Long parentId = parentIdGetter.apply(item);
+            T parent = itemMap.get(parentId);
             if (Objects.isNull(parentId) || parentId == 0L || Objects.isNull(parent)) {
                 roots.add(item);
             } else {
-                childrenMap.get(parent.getId()).add(item);
+                childrenMap.get(idGetter.apply(parent)).add(item);
             }
         }
 
-        for (MenuEntity item : items) {
-            item.setChildren(childrenMap.get(item.getId()));
+        for (T item : items) {
+            childrenSetter.accept(item, childrenMap.get(idGetter.apply(item)));
         }
         return roots;
+    }
+
+    public static <T> Comparator<T> comparingOrderNoThenId(
+            Function<T, Integer> orderNoGetter,
+            Function<T, Long> idGetter
+    ) {
+        return Comparator.comparing(orderNoGetter, Comparator.nullsLast(Integer::compareTo))
+                .thenComparing(idGetter, Comparator.nullsLast(Long::compareTo));
     }
 }

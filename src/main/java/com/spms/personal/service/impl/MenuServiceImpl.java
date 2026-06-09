@@ -37,7 +37,12 @@ public class MenuServiceImpl extends BaseService<MenuEntity> implements MenuServ
         params.put("path", trimToNull(filter == null ? null : filter.path()));
         params.put("component", trimToNull(filter == null ? null : filter.component()));
         params.put("isDisabled", filter == null ? null : filter.isDisabled());
-        return TreeUtils.buildMenuTree(menuMapper.getPageList(params));
+        return TreeUtils.buildTree(
+                menuMapper.getPageList(params),
+                MenuEntity::getId,
+                MenuEntity::getParentId,
+                MenuEntity::setChildren
+        );
     }
 
     @Override

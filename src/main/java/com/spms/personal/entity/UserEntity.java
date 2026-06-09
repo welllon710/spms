@@ -32,6 +32,8 @@ public class UserEntity extends BaseEntity {
 
     private List<RoleEntity> roleList;
 
+    private List<DepartmentEntity> departmentList;
+
 
     @JsonIgnore
     public final boolean isRootUser() {

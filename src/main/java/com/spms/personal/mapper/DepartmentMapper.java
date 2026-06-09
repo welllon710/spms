@@ -28,4 +28,10 @@ public interface DepartmentMapper {
     int update(DepartmentEntity department);
 
     int deleteById(@Param("id") Long id);
+
+    List<DepartmentEntity> getDepartmentListByUserId(@Param("userId") Long id);
+
+    Integer updateUserDepartmentList(@Param("id") Long userId, @Param("departmentIds") List<DepartmentEntity> departmentIds);
+
+    void deleteUserDepartmentList(@Param("id") Long userId);
 }

@@ -76,6 +76,11 @@
         from user_department_list
         where department_list_id = #{departmentId}
     </select>
+    <select id="getDepartmentListByUserId" resultType="com.spms.personal.entity.DepartmentEntity">
+        select d.id,d.name,d.code,d.parent_id from department d
+        left join user_department_list u on u.department_list_id = d.id
+        where u.user_entity_id = #{userId}
+    </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         insert into department (
@@ -110,9 +115,19 @@
             order_no = #{orderNo}
         where id = #{id}
     </update>
+    <update id="updateUserDepartmentList">
+        insert into user_department_list (user_entity_id, department_list_id)
+        values
+        <foreach collection="departmentIds" item="depart" separator=",">
+            (#{id}, #{depart.id})
+        </foreach>
+    </update>
 
     <delete id="deleteById">
         delete from department
         where id = #{id}
+    </delete>
+    <delete id="deleteUserDepartmentList">
+        delete from user_department_list where user_entity_id = #{id}
     </delete>
 </mapper>

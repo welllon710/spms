@@ -53,28 +53,40 @@
         <collection property="roleList" resultMap="roleResultMap"/>
     </resultMap>
 
-    <select id="getById" resultMap="userWithRoleListResultMap">
-        select u.id           as user_id,
-               u.create_time  as user_create_time,
-               u.update_time  as user_update_time,
-               u.is_disabled  as user_is_disabled,
-               u.is_published as user_is_published,
-               u.avatar       as user_avatar,
-               u.email        as user_email,
-               u.gender       as user_gender,
-               u.id_card      as user_id_card,
-               u.nickname     as user_nickname,
-               u.phone        as user_phone,
-               u.real_name    as user_real_name,
-               r.id           as role_id,
-               r.is_disabled  as role_is_disabled,
-               r.name         as role_name,
-               r.code         as role_code
-        from `user` u
-                 left join user_role_list ur on ur.user_entity_id = u.id
-                 left join role r on r.id = ur.role_list_id
-        where u.id = #{id}
+    <sql id="userColumns">
+        id,
+        create_time,
+        update_time,
+        is_disabled,
+        is_published,
+        avatar,
+        email,
+        gender,
+        id_card,
+        nickname,
+        phone,
+        real_name
+    </sql>
+
+
+    <select id="getById" resultType="com.spms.personal.entity.UserEntity">
+        select
+        <include refid="userColumns"/>
+        from `user`
+        where id = #{id}
+        limit 1
     </select>
+
+    <update id="update">
+        update `user`
+        <set>
+            update_time = #{updateTime},
+            email = #{email},
+            nickname = #{nickname},
+            phone = #{phone}
+        </set>
+        where id = #{id}
+    </update>
 
     <select id="getPermissionListByRoleId" resultMap="permissionResultMap">
         select distinct p.id,
@@ -153,5 +165,21 @@
           and coalesce(r.is_disabled, 0) = 0
           and coalesce(m.is_disabled, 0) = 0
         order by m.order_no asc, m.id asc
+    </select>
+    <select id="getPageList" resultType="com.spms.personal.entity.UserEntity">
+        select
+        <include refid="userColumns"/>
+        from `user` u
+        <where>
+            <if test="departmentId != null">
+                and exists (
+                    select 1
+                    from user_department_list ud
+                    where ud.user_entity_id = u.id
+                      and ud.department_list_id = #{departmentId}
+                )
+            </if>
+        </where>
+        order by u.id desc
     </select>
 </mapper>

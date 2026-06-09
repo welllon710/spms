@@ -4,6 +4,7 @@ import com.spms.common.result.Json;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.List;
@@ -31,6 +33,11 @@ import java.util.Set;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private static final String MESSAGE_AND_DESCRIPTION = "%s (%s)";
+
+    @ExceptionHandler({ClientAbortException.class, AsyncRequestNotUsableException.class})
+    public void handleClientAbort(Exception exception) {
+        log.debug("Client aborted request: {}", exception.getMessage());
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public Json<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {

@@ -1,8 +1,10 @@
 package com.spms.base;
 
+import lombok.Data;
+
+
 public record PageQuery<T>(
         T filter,
-        Integer pageNum,
-        Integer pageSize
+        PageParams page
 ) {
 }

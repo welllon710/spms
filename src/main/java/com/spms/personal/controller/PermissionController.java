@@ -13,14 +13,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.List;
+
 @Api("permission")
 @Permission
 @RequiredArgsConstructor
 public class PermissionController extends ApiController {
     private final PermissionService permissionService;
 
-    @PostMapping("/getPage")
-    public Json<PageResult<PermissionEntity>> getPage(@RequestBody(required = false) PageQuery<PermissionPageFilter> request) {
+    @PostMapping("/getList")
+    public Json<List<PermissionEntity>> getPage(@RequestBody(required = false) PageQuery<PermissionPageFilter> request) {
         return Json.data(permissionService.getPage(request));
     }
 

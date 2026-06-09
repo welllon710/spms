@@ -13,16 +13,20 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.List;
+
 @Api("department")
 @Permission
 @RequiredArgsConstructor
 public class DepartmentController extends ApiController {
     private final DepartmentService departmentService;
 
-    @PostMapping("/getPage")
-    public Json<PageResult<DepartmentEntity>> getPage(@RequestBody(required = false) PageQuery<DepartmentPageFilter> request) {
+    @PostMapping("/getList")
+    public Json<List<DepartmentEntity>> getPage(@RequestBody(required = false) PageQuery<DepartmentPageFilter> request) {
         return Json.data(departmentService.getPage(request));
     }
+
+
 
     @PostMapping("/getDetail")
     public Json<DepartmentEntity> getDetail(@RequestBody DepartmentEntity department) {

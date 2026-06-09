@@ -8,7 +8,9 @@ import com.spms.common.result.PageResult;
 import com.spms.base.SortParam;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
+import com.spms.common.util.TreeUtils;
 import com.spms.personal.entity.DepartmentEntity;
+import com.spms.personal.entity.PermissionEntity;
 import com.spms.personal.mapper.DepartmentMapper;
 import com.spms.personal.model.DepartmentPageFilter;
 import com.spms.personal.service.DepartmentService;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -33,7 +36,7 @@ public class DepartmentServiceImpl extends BaseService<DepartmentEntity> impleme
     private final DepartmentMapper departmentMapper;
 
     @Override
-    public PageResult<DepartmentEntity> getPage(PageQuery<DepartmentPageFilter> request) {
+    public List<DepartmentEntity> getPage(PageQuery<DepartmentPageFilter> request) {
         DepartmentPageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = new HashMap<>();
         params.put("name", trimToNull(filter == null ? null : filter.name()));
@@ -41,7 +44,12 @@ public class DepartmentServiceImpl extends BaseService<DepartmentEntity> impleme
         params.put("parentId", filter == null ? null : filter.parentId());
         params.put("isDisabled", filter == null ? null : filter.isDisabled());
         PageHelper.startPage(getPageNum(request), getPageSize(request));
-        return PageResult.from(new PageInfo<>(departmentMapper.getPageList(params)), DEFAULT_SORT);
+        return TreeUtils.buildTree(
+                departmentMapper.getPageList(params),
+                DepartmentEntity::getId,
+                DepartmentEntity::getParentId,
+                DepartmentEntity::setChildren
+        );
     }
 
     @Override

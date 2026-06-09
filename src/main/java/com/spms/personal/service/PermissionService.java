@@ -5,8 +5,10 @@ import com.spms.common.result.PageResult;
 import com.spms.personal.entity.PermissionEntity;
 import com.spms.personal.model.PermissionPageFilter;
 
+import java.util.List;
+
 public interface PermissionService {
-    PageResult<PermissionEntity> getPage(PageQuery<PermissionPageFilter> request);
+    List<PermissionEntity> getPage(PageQuery<PermissionPageFilter> request);
 
     PermissionEntity getDetail(Long id);
 

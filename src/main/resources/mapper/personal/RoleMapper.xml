@@ -135,6 +135,14 @@
         where id = #{id}
     </update>
 
+    <update id="updateUserRoleList">
+        insert into user_role_list (user_entity_id, role_list_id)
+        values
+        <foreach collection="roleIds" item="role" separator=",">
+            (#{id}, #{role.id})
+        </foreach>
+    </update>
+
     <delete id="deleteMenuRelationsByRoleId">
         delete from role_menu_list
         where role_entity_id = #{roleId}
@@ -151,6 +159,9 @@
     </delete>
     <delete id="deleteAuthorizeMenu">
         delete from role_menu_list where role_entity_id = #{id}
+    </delete>
+    <delete id="deleteUserRoleList">
+        delete from user_role_list where user_entity_id = #{id}
     </delete>
 
     <select id="getMenuListByRoleId" resultMap="menuResultMap">
@@ -186,5 +197,10 @@
                  join permission p on p.id = rp.permission_list_id
         where rp.role_entity_id = #{roleId}
         order by p.id asc
+    </select>
+    <select id="getRoleByUserId" resultType="com.spms.personal.entity.RoleEntity">
+        select r.id,r.name, r.code
+        from role r
+                 join user_role_list ur on r.id = ur.role_list_id and ur.user_entity_id = #{userId}
     </select>
 </mapper>

@@ -1,31 +1,49 @@
 package com.spms.personal.service.impl;
 
 
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
+import com.spms.base.BaseService;
+import com.spms.base.PageQuery;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.common.redis.RedisHelper;
 import com.spms.common.result.Json;
+import com.spms.common.result.PageResult;
 import com.spms.common.security.LoginSessionService;
 import com.spms.common.security.PermissionUtil;
 import com.spms.common.security.TokenService;
 import com.spms.common.util.TreeUtils;
+import com.spms.personal.entity.DepartmentEntity;
 import com.spms.personal.entity.MenuEntity;
+import com.spms.personal.entity.RoleEntity;
 import com.spms.personal.entity.UserEntity;
+import com.spms.personal.mapper.DepartmentMapper;
+import com.spms.personal.mapper.RoleMapper;
 import com.spms.personal.mapper.UserMapper;
 import com.spms.personal.model.UserLoginRequest;
+import com.spms.personal.model.UserPageFilter;
 import com.spms.personal.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import static com.spms.common.util.ParamUtils.requireId;
+import static com.spms.common.util.ParamUtils.requireNotNull;
 
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl extends BaseService<UserEntity> implements UserService {
 
     @Resource
     private  UserMapper userMapper;
@@ -38,6 +56,11 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private RedisHelper redisHelper;
+    @Autowired
+    private RoleMapper roleMapper;
+
+    @Autowired
+    private DepartmentMapper departmentMapper;
 
     private @NotNull String getUserPermissionCacheKey(long userId) {
         return "user_permission_" + userId;
@@ -122,14 +145,107 @@ public class UserServiceImpl implements UserService {
         } else {
             menuList = userMapper.getMenuListByUserId(currentUserId);
         }
-        List<MenuEntity> menuEntities = TreeUtils.buildMenuTree(menuList);
+        List<MenuEntity> menuEntities = TreeUtils.buildTree(
+                menuList,
+                MenuEntity::getId,
+                MenuEntity::getParentId,
+                MenuEntity::setChildren,
+                TreeUtils.comparingOrderNoThenId(MenuEntity::getOrderNo, MenuEntity::getId)
+        );
         redisHelper.set(userMenuCacheKey, Json.toString(menuEntities));
         return menuEntities;
     }
 
     @Override
     public UserEntity getMyInfo(long currentUserId) {
-        return userMapper.getById(currentUserId);
+        UserEntity userEntity = userMapper.getById(currentUserId);
+        if (userEntity == null) {
+            throw new AppException(CommonError.UNAUTHORIZED);
+        }
+        return userEntity;
+    }
+
+    @Override
+    public PageResult<UserEntity> getPage(PageQuery<UserPageFilter> request) {
+        PageHelper.startPage(getPageNum(request), getPageSize(request));
+        UserPageFilter filter = request == null ? null : request.filter();
+        Map<String, Object> params = new HashMap<>();
+        params.put("departmentId", filter == null ? null : filter.departmentId());
+        return PageResult.from(new PageInfo<>(userMapper.getPageList(params)), null);
+    }
+
+    @Override
+    public UserEntity getDetail(Long id) {
+        UserEntity userEntity = getRequiredUser(id);
+        List<RoleEntity> roleByUserId = roleMapper.getRoleByUserId(id);
+        List<DepartmentEntity> departmentList = departmentMapper.getDepartmentListByUserId(id);
+        userEntity.setRoleList(roleByUserId);
+        userEntity.setDepartmentList(departmentList);
+        return userEntity;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void update(UserEntity userEntity) {
+        requireNotNull(userEntity, "请求参数不能为空");
+        getRequiredUser(userEntity.getId());
+        UserEntity entity = new UserEntity();
+        entity.setId(userEntity.getId());
+        entity.setEmail(userEntity.getEmail());
+        entity.setPhone(userEntity.getPhone());
+        entity.setNickname(userEntity.getNickname());
+        initUpdateEntity(entity);
+        userMapper.update(entity);
+        if (userEntity.getRoleList() != null) {
+            roleMapper.deleteUserRoleList(userEntity.getId());
+            if (!userEntity.getRoleList().isEmpty()) {
+                roleMapper.updateUserRoleList(userEntity.getId(), userEntity.getRoleList());
+            }
+        }
+        if (userEntity.getDepartmentList() != null) {
+            departmentMapper.deleteUserDepartmentList(userEntity.getId());
+            if (!userEntity.getDepartmentList().isEmpty()) {
+                departmentMapper.updateUserDepartmentList(userEntity.getId(), userEntity.getDepartmentList());
+            }
+        }
+        redisHelper.delete(getUserPermissionCacheKey(userEntity.getId()));
+        redisHelper.delete(getUserMenuCacheKey(userEntity.getId()));
+    }
+
+    private UserEntity getRequiredUser(Long id) {
+        requireId(id, "用户ID不能为空");
+        UserEntity userEntity = userMapper.getById(id);
+        if (userEntity == null) {
+            throw new AppException(CommonError.DATA_NOT_FOUND);
+        }
+        return userEntity;
+    }
+
+    private void fillUnchangedUserFields(UserEntity userEntity, UserEntity exist) {
+        if (userEntity.getIsDisabled() == null) {
+            userEntity.setIsDisabled(exist.getIsDisabled());
+        }
+        if (userEntity.getAvatar() == null) {
+            userEntity.setAvatar(exist.getAvatar());
+        }
+        if (userEntity.getEmail() == null) {
+            userEntity.setEmail(exist.getEmail());
+        }
+        if (userEntity.getGender() == null) {
+            userEntity.setGender(exist.getGender());
+        }
+        if (userEntity.getIdCard() == null) {
+            userEntity.setIdCard(exist.getIdCard());
+        }
+        if (userEntity.getNickname() == null) {
+            userEntity.setNickname(exist.getNickname());
+        }
+        if (userEntity.getPhone() == null) {
+            userEntity.setPhone(exist.getPhone());
+        }
+        if (userEntity.getRealName() == null) {
+            userEntity.setRealName(exist.getRealName());
+        }
     }
 
     private boolean isPasswordMatched(String password, UserEntity userEntity) {

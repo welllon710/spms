@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface UserMapper {
@@ -17,6 +18,8 @@ public interface UserMapper {
     UserEntity getByEmail(@Param("email") String email);
 
     UserEntity getById(@Param("id") Long id);
+
+    int update(UserEntity user);
 
     List<PermissionEntity> getPermissionListByRoleId(@Param("roleId") Long roleId);
 
@@ -27,4 +30,8 @@ public interface UserMapper {
     List<MenuEntity> getAllMenuList();
 
     List<MenuEntity> getMenuListByUserId(@Param("userId") Long userId);
+
+    List<UserEntity> getPageList(Map<String, Object> params);
+
+
 }
