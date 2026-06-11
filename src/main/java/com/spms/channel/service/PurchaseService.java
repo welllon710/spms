@@ -6,9 +6,13 @@ import com.spms.channel.model.PurchasePageFilter;
 import com.spms.common.result.Json;
 import com.spms.common.result.PageResult;
 
+import java.util.Map;
+
 public interface PurchaseService {
 
     PageResult<PurchaseEntity> getPage(PageQuery<PurchasePageFilter> request);
 
     void add(PurchasePageFilter request);
+
+    PurchaseEntity getDetail(Map<String, Object> request);
 }

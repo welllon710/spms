@@ -14,6 +14,9 @@ import com.spms.common.security.Permission;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.Map;
 
 @Api("purchase")
 @RequiredArgsConstructor
@@ -34,6 +37,11 @@ public class PurchaseController extends ApiController {
     public Json getPurchaseList(@RequestBody PurchasePageFilter request) {
         purchaseService.add(request);
         return Json.success("采购成功");
+    }
+
+    @PostMapping("getDetail")
+    public Json<PurchaseEntity> getPurchaseDetail(@RequestBody Map<String,Object> request) {
+        return Json.data(purchaseService.getDetail(request));
     }
 
 }
