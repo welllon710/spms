@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.channel.mapper.SalePriceMapper">
+    <resultMap id="purchasePriceResultMap" type="com.spms.channel.entity.SalePriceEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="material_id" property="materialId"/>
+        <result column="customer_id" property="customerId"/>
+        <result column="price" property="price"/>
+
+        <association property="material" javaType="com.spms.asset.entity.MaterialEntity">
+            <id column="material_id" property="id"/>
+            <result column="material_code" property="code"/>
+            <result column="material_name" property="name"/>
+            <result column="material_spc" property="spc"/>
+            <result column="material_type" property="materialType"/>
+            <result column="material_use_type" property="useType"/>
+            <result column="material_unit_id" property="unitId"/>
+            <result column="material_purchase_price" property="purchasePrice"/>
+            <result column="material_sale_price" property="salePrice"/>
+        </association>
+
+        <association property="customer" javaType="com.spms.channel.entity.CustomerEntity">
+            <id column="customer_id" property="id"/>
+            <result column="customer_code" property="code"/>
+            <result column="customer_name" property="name"/>
+            <result column="customer_phone" property="phone"/>
+        </association>
+    </resultMap>
+
+    <sql id="purchasePriceColumns">
+        sp.id,
+        sp.create_time,
+        sp.update_time,
+        sp.is_disabled,
+        sp.is_published,
+        sp.material_id,
+        sp.customer_id,
+        sp.price,
+
+        m.code as material_code,
+        m.name as material_name,
+        m.spc as material_spc,
+        m.material_type,
+        m.use_type as material_use_type,
+        m.unit_id as material_unit_id,
+        m.purchase_price as material_purchase_price,
+        m.sale_price as material_sale_price,
+
+        c.code as customer_code,
+        c.name as customer_name,
+        c.phone as customer_phone
+    </sql>
+
+    <sql id="purchasePriceJoinFrom">
+        from sale_price sp
+        left join material m on m.id = sp.material_id
+        left join customer c on c.id = sp.customer_id
+    </sql>
+
+    <select id="getPageList" resultMap="purchasePriceResultMap">
+        select
+        <include refid="purchasePriceColumns"/>
+        <include refid="purchasePriceJoinFrom"/>
+        order by sp.id desc
+    </select>
+
+
+    <select id="getById" resultMap="purchasePriceResultMap">
+        select
+        <include refid="purchasePriceColumns"/>
+        <include refid="purchasePriceJoinFrom"/>
+        <where>
+            <if test="id != null">
+                and sp.id = #{id}
+            </if>
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.asset.mapper.MaterialMapper">
+    <resultMap id="materialResultMap" type="com.spms.asset.entity.MaterialEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="code" property="code"/>
+        <result column="name" property="name"/>
+        <result column="spc" property="spc"/>
+        <result column="material_type" property="materialType"/>
+        <result column="use_type" property="useType"/>
+        <result column="unit_id" property="unitId"/>
+        <result column="purchase_price" property="purchasePrice"/>
+        <result column="sale_price" property="salePrice"/>
+
+        <association property="unit" javaType="com.spms.personal.entity.UnitEntity">
+            <id column="unit_join_id" property="id"/>
+            <result column="unit_name" property="name"/>
+            <result column="unit_code" property="code"/>
+        </association>
+    </resultMap>
+
+    <sql id="materialColumns">
+        m.id,
+        m.create_time,
+        m.update_time,
+        m.is_disabled,
+        m.is_published,
+        m.code,
+        m.name,
+        m.spc,
+        m.material_type,
+        m.use_type,
+        m.unit_id,
+        m.purchase_price,
+        m.sale_price,
+        u.id as unit_join_id,
+        u.name as unit_name,
+        u.code as unit_code
+    </sql>
+
+    <sql id="materialJoinFrom">
+        from material m
+        left join `unit` u on u.id = m.unit_id
+    </sql>
+
+    <select id="getPageList" resultMap="materialResultMap">
+        select
+        <include refid="materialColumns"/>
+        <include refid="materialJoinFrom"/>
+        <where>
+            <if test="params.name != null and params.name != ''">
+                and m.name like concat('%', #{params.name}, '%')
+            </if>
+            <if test="params.code != null and params.code != ''">
+                and m.code like concat('%', #{params.code}, '%')
+            </if>
+            <if test="params.spc != null and params.spc != ''">
+                and m.spc like concat('%', #{params.spc}, '%')
+            </if>
+            <if test="params.materialType != null">
+                and m.material_type = #{params.materialType}
+            </if>
+            <if test="params.useType != null">
+                and m.use_type = #{params.useType}
+            </if>
+            <if test="params.unitId != null">
+                and m.unit_id = #{params.unitId}
+            </if>
+            <if test="params.isDisabled != null">
+                and m.is_disabled = #{params.isDisabled}
+            </if>
+        </where>
+        order by m.id desc
+    </select>
+
+    <select id="getById" resultMap="materialResultMap">
+        select
+        <include refid="materialColumns"/>
+        <include refid="materialJoinFrom"/>
+        where m.id = #{id}
+    </select>
+</mapper>

@@ -36,6 +36,7 @@ import org.springframework.util.StringUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalLong;
 
 import static com.spms.common.util.ParamUtils.requireId;
 import static com.spms.common.util.ParamUtils.requireNotNull;
@@ -96,10 +97,18 @@ public class UserServiceImpl extends BaseService<UserEntity> implements UserServ
     }
 
     @Override
-    public void logout(long currentUserId) {
-        loginSessionService.delete(currentUserId);
+    public void logout(String token) {
+        OptionalLong currentUserId = tokenService.tryVerify(token);
+        if (currentUserId.isEmpty()) {
+            return;
+        }
+        clearLoginState(currentUserId.getAsLong());
+    }
+
+    private void clearLoginState(long currentUserId) {
         redisHelper.delete(getUserPermissionCacheKey(currentUserId));
         redisHelper.delete(getUserMenuCacheKey(currentUserId));
+        loginSessionService.delete(currentUserId);
     }
 
     @Override
@@ -148,8 +157,7 @@ public class UserServiceImpl extends BaseService<UserEntity> implements UserServ
                 menuList,
                 MenuEntity::getId,
                 MenuEntity::getParentId,
-                MenuEntity::setChildren,
-                TreeUtils.comparingOrderNoThenId(MenuEntity::getOrderNo, MenuEntity::getId)
+                MenuEntity::setChildren
         );
         redisHelper.set(userMenuCacheKey, Json.toString(menuEntities));
         return menuEntities;

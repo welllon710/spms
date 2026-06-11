@@ -3,6 +3,8 @@ package com.spms.base;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 
+import java.util.Date;
+
 import static com.spms.common.util.ParamUtils.requireNotNull;
 
 public abstract class BaseService<E extends BaseEntity> {

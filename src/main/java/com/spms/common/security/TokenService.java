@@ -8,6 +8,8 @@ import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import org.springframework.stereotype.Service;
 
+import java.util.OptionalLong;
+
 @Service
 public class TokenService {
     private final AppProperties appProperties;
@@ -22,6 +24,20 @@ public class TokenService {
             return Long.parseLong(verifier.verify(token).getSubject());
         } catch (Exception exception) {
             throw new AppException(CommonError.UNAUTHORIZED, "无效的令牌");
+        }
+    }
+
+    public OptionalLong tryVerify(String token) {
+        if (token == null || token.isBlank()) {
+            return OptionalLong.empty();
+        }
+        try {
+            return OptionalLong.of(verify(token.trim()));
+        } catch (AppException exception) {
+            if (exception.getResultCode() == CommonError.UNAUTHORIZED) {
+                return OptionalLong.empty();
+            }
+            throw exception;
         }
     }
 

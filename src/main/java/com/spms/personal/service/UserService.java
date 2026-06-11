@@ -17,7 +17,7 @@ public interface UserService {
 
     String login(UserLoginRequest request);
 
-    void logout(long currentUserId);
+    void logout(String token);
 
     List<String> getMyPermissionList(long currentUserId);
 

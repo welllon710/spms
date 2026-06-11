@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.channel.mapper.PurchasePriceMapper">
+    <resultMap id="purchasePriceResultMap" type="com.spms.channel.entity.PurchasePriceEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="material_id" property="materialId"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="price" property="price"/>
+
+        <association property="material" javaType="com.spms.asset.entity.MaterialEntity">
+            <id column="material_id" property="id"/>
+            <result column="material_code" property="code"/>
+            <result column="material_name" property="name"/>
+            <result column="material_spc" property="spc"/>
+            <result column="material_type" property="materialType"/>
+            <result column="material_use_type" property="useType"/>
+            <result column="material_unit_id" property="unitId"/>
+            <result column="material_purchase_price" property="purchasePrice"/>
+            <result column="material_sale_price" property="salePrice"/>
+        </association>
+
+        <association property="supplier" javaType="com.spms.channel.entity.SupplierEntity">
+            <id column="supplier_id" property="id"/>
+            <result column="supplier_code" property="code"/>
+            <result column="supplier_name" property="name"/>
+            <result column="supplier_phone" property="phone"/>
+        </association>
+    </resultMap>
+
+    <sql id="purchasePriceColumns">
+        pp.id,
+        pp.create_time,
+        pp.update_time,
+        pp.is_disabled,
+        pp.is_published,
+        pp.material_id,
+        pp.supplier_id,
+        pp.price,
+        m.code as material_code,
+        m.name as material_name,
+        m.spc as material_spc,
+        m.material_type,
+        m.use_type as material_use_type,
+        m.unit_id as material_unit_id,
+        m.purchase_price as material_purchase_price,
+        m.sale_price as material_sale_price,
+        s.code as supplier_code,
+        s.name as supplier_name,
+        s.phone as supplier_phone
+    </sql>
+
+    <sql id="purchasePriceJoinFrom">
+        from purchase_price pp
+        left join material m on m.id = pp.material_id
+        left join supplier s on s.id = pp.supplier_id
+    </sql>
+
+    <select id="getPageList" resultMap="purchasePriceResultMap">
+        select
+        <include refid="purchasePriceColumns"/>
+        <include refid="purchasePriceJoinFrom"/>
+        <where>
+            <if test="params.materialId != null">
+                and pp.material_id = #{params.materialId}
+            </if>
+            <if test="params.supplierId != null">
+                and pp.supplier_id = #{params.supplierId}
+            </if>
+            <if test="params.materialName != null and params.materialName != ''">
+                and m.name like concat('%', #{params.materialName}, '%')
+            </if>
+            <if test="params.materialCode != null and params.materialCode != ''">
+                and m.code like concat('%', #{params.materialCode}, '%')
+            </if>
+            <if test="params.supplierName != null and params.supplierName != ''">
+                and s.name like concat('%', #{params.supplierName}, '%')
+            </if>
+            <if test="params.supplierCode != null and params.supplierCode != ''">
+                and s.code like concat('%', #{params.supplierCode}, '%')
+            </if>
+            <if test="params.isDisabled != null">
+                and pp.is_disabled = #{params.isDisabled}
+            </if>
+        </where>
+        order by pp.id desc
+    </select>
+
+
+    <select id="getById" resultMap="purchasePriceResultMap">
+        select
+        <include refid="purchasePriceColumns"/>
+        <include refid="purchasePriceJoinFrom"/>
+        <where>
+            <if test="id != null">
+                and pp.id = #{id}
+            </if>
+        </where>
+    </select>
+
+    <select id="getByMaterialAndSupplier" resultMap="purchasePriceResultMap">
+        select
+        <include refid="purchasePriceColumns"/>
+        <include refid="purchasePriceJoinFrom"/>
+        <where>
+            <if test="materialId != null and supplierId != null">
+                and pp.material_id = #{materialId}
+                and pp.supplier_id = #{supplierId}
+            </if>
+        </where>
+    </select>
+</mapper>

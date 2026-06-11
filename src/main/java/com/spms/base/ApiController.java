@@ -19,8 +19,11 @@ public abstract class ApiController {
     @Autowired
     private  HttpServletRequest request;
 
+    protected String getLoginToken() {
+        return request.getHeader(appProperties.getLoginHeader());
+    }
+
     protected long getCurrentUserId() {
-        String token = request.getHeader(appProperties.getLoginHeader());
-        return tokenService.verify(token);
+        return tokenService.verify(getLoginToken());
     }
 }

@@ -2,6 +2,7 @@ package com.spms.personal.service.impl;
 
 import com.spms.common.redis.RedisHelper;
 import com.spms.common.security.LoginSessionService;
+import com.spms.common.security.TokenService;
 import com.spms.personal.entity.UserEntity;
 import com.spms.personal.mapper.UserMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,8 +13,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.OptionalLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -28,12 +31,16 @@ class UserServiceImplTest {
     @Mock
     private RedisHelper redisHelper;
 
+    @Mock
+    private TokenService tokenService;
+
     private UserServiceImpl userService;
 
     @BeforeEach
     void setUp() {
         userService = new UserServiceImpl();
         ReflectionTestUtils.setField(userService, "userMapper", userMapper);
+        ReflectionTestUtils.setField(userService, "tokenService", tokenService);
         ReflectionTestUtils.setField(userService, "loginSessionService", loginSessionService);
         ReflectionTestUtils.setField(userService, "redisHelper", redisHelper);
     }
@@ -80,10 +87,28 @@ class UserServiceImplTest {
 
     @Test
     void logoutClearsSessionAndUserCaches() {
-        userService.logout(2L);
+        when(tokenService.tryVerify("token")).thenReturn(OptionalLong.of(2L));
+
+        userService.logout("token");
 
         verify(loginSessionService).delete(2L);
         verify(redisHelper).delete("user_permission_2");
         verify(redisHelper).delete("user_menu_2");
+    }
+
+    @Test
+    void logoutIgnoresBlankToken() {
+        userService.logout(" ");
+
+        verify(loginSessionService, never()).delete(2L);
+    }
+
+    @Test
+    void logoutIgnoresInvalidToken() {
+        when(tokenService.tryVerify("bad-token")).thenReturn(OptionalLong.empty());
+
+        userService.logout("bad-token");
+
+        verify(loginSessionService, never()).delete(2L);
     }
 }

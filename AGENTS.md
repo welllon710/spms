@@ -1,5 +1,16 @@
 # AGENTS.md
 
+## 后续模块开发约定
+
+后续新增业务模块默认使用 MyBatis-Plus 写法，不再引入 PageHelper 或旧分页模式。
+
+- 分页接口统一使用 `PageQuery<T>` 作为请求模型。
+- 分页查询统一使用 MyBatis-Plus `Page<T>` / `IPage<T>`，并通过 `PageResult.from(...)` 返回。
+- Mapper 分页方法把 `Page<T>` 放在第一个参数，查询条件统一使用 `@Param("params") Map<String, Object> params`。
+- XML 中访问查询条件时使用 `params.xxx`，不要直接使用 `xxx`。
+- 简单 CRUD 优先考虑 MyBatis-Plus 的 `BaseMapper` / Wrapper 写法；需要复杂关联、树结构、批量关系表操作或可读性更好的 SQL 时，可以继续保留 XML SQL。
+- 树结构接口仍然返回完整 `List<T>`，不要为了统一而强行分页。
+
 ## 项目概览
 
 本项目是 `spms` 后端服务，基于 Spring Boot 3.3.5、Java 17、MyBatis-Plus、MySQL、Redis。

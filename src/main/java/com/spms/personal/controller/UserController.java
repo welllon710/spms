@@ -77,7 +77,7 @@ public class UserController extends ApiController {
     @Permission(login = false,authorize = false)
     @PostMapping("/logout")
     public Json<String> logout() {
-        userService.logout(getCurrentUserId());
+        userService.logout(getLoginToken());
         return Json.success("退出成功");
     }
 }
