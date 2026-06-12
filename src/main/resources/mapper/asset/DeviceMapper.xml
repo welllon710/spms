@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.asset.mapper.DeviceMapper">
+    <resultMap id="parameterResultMap" type="com.spms.iot.entity.ParameterEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="code" property="code"/>
+        <result column="label" property="label"/>
+        <result column="is_system" property="isSystem"/>
+        <result column="data_type" property="dataType"/>
+    </resultMap>
+
+    <sql id="parameterColumns">
+        p.id,
+        p.create_time,
+        p.update_time,
+        p.is_disabled,
+        p.is_published,
+        p.code,
+        p.label,
+        p.is_system,
+        p.data_type
+    </sql>
+
+    <select id="getParameterListByDeviceId" resultMap="parameterResultMap">
+        select
+        <include refid="parameterColumns"/>
+        from device_parameter dp
+        join parameter p on p.id = dp.parameter_id
+        where dp.device_id = #{deviceId}
+        order by p.id asc
+    </select>
+</mapper>

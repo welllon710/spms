@@ -3,8 +3,6 @@ package com.spms.base;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 
-import java.util.Date;
-
 import static com.spms.common.util.ParamUtils.requireNotNull;
 
 public abstract class BaseService<E extends BaseEntity> {
@@ -35,7 +33,7 @@ public abstract class BaseService<E extends BaseEntity> {
     }
 
     protected int getPageNum(PageQuery<?> request) {
-        Integer pageNum = request == null ? null : request.pageNum();
+        Integer pageNum = getRequestPageNum(request);
         if (pageNum == null || pageNum < 1) {
             return DEFAULT_PAGE_NUM;
         }
@@ -43,10 +41,30 @@ public abstract class BaseService<E extends BaseEntity> {
     }
 
     protected int getPageSize(PageQuery<?> request) {
-        Integer pageSize = request == null ? null : request.pageSize();
+        Integer pageSize = getRequestPageSize(request);
         if (pageSize == null || pageSize < 1) {
             return DEFAULT_PAGE_SIZE;
         }
         return Math.min(pageSize, MAX_PAGE_SIZE);
+    }
+
+    private Integer getRequestPageNum(PageQuery<?> request) {
+        if (request == null) {
+            return null;
+        }
+        if (request.pageNum() != null) {
+            return request.pageNum();
+        }
+        return request.page() == null ? null : request.page().pageNum();
+    }
+
+    private Integer getRequestPageSize(PageQuery<?> request) {
+        if (request == null) {
+            return null;
+        }
+        if (request.pageSize() != null) {
+            return request.pageSize();
+        }
+        return request.page() == null ? null : request.page().pageSize();
     }
 }
