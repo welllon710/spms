@@ -5,11 +5,13 @@
 当前项目已存在：
 
 - `asset/material`：物料 CRUD 基础实现。
+- `asset/device`：设备 CRUD 基础实现，支持设备参数绑定。
+- `iot/parameter`：采集参数 CRUD 基础实现。
 - `personal/unit`：单位 CRUD 基础实现。
 - `wms/entity`：`input`、`input_detail`、`output`、`output_detail` 实体骨架。
 - `system/coderule`：编码规则实体和轻量编码服务。
 
-后续实现仍按当前项目约定：新增业务模块优先使用 MyBatis-Plus，分页使用 `PageQuery<T>`、`Page<T>` / `IPage<T>` 和 `PageResult<T>`。
+后续实现仍按当前项目约定：新增业务模块优先使用 MyBatis-Plus，分页使用 `PageQuery<T>`、`Page<T>` / `IPage<T>` 和 `PageResult<T>`。`PageQuery<T>` 需要兼容顶层 `pageNum/pageSize` 和嵌套 `page.pageNum/pageSize` 两种前端入参。
 
 ## 模块边界
 
@@ -29,9 +31,9 @@
 | --- | --- | --- |
 | `unit` | 单位 | 当前项目已有 |
 | `material` | 物料主数据 | 当前项目已有 CRUD |
-| `device` | 设备主数据 | 待实现 |
-| `parameter` | 设备采集参数 | 待实现，属于 IoT 参数 |
-| 设备参数关系表 | 设备与参数多对多 | 具体表名按数据库实际结构确认 |
+| `device` | 设备主数据 | 当前项目已有 CRUD |
+| `parameter` | 设备采集参数 | 当前项目已有 CRUD，属于 IoT 参数 |
+| `device_parameter` | 设备与参数多对多 | 当前项目已有绑定关系维护 |
 | `storage` | 仓库/库位 | 待实现，树形结构 |
 | `inventory` | 库存 | 待实现 |
 | `input` | 入库单 | 当前仅有实体骨架 |
@@ -58,6 +60,11 @@
 | 移库单号 | `MoveBillCode` | `MV` | 日 | `yyyymmdd` | 4 | `MV202606120001` |
 
 说明：旧项目文档明确采购/销售单号规则，物料/单位/设备/仓库/出入库/移库编码在新项目中按同类业务规则归纳。若数据库中已有不同 `coderule` 配置，以数据库配置为准。
+
+当前已落地：
+
+- `CodeRuleField.DEVICE_CODE`：设备编码。
+- 采购/销售单号相关编码规则在渠道模块中使用。
 
 ## 物料管理
 
@@ -383,7 +390,7 @@
 
 接口前缀：`/device`
 
-设备模块建议第二版实现。第一版可以先建立实体和 CRUD，不接 MQTT/InfluxDB。
+当前项目已实现第一版设备主数据：分页、详情、新增、修改、删除、设备参数绑定。不接 MQTT、Redis 实时报告、InfluxDB 历史数据。
 
 ### 字段
 
@@ -397,6 +404,29 @@
 | `partCount` | 实时产量 | 只读，默认 `0` |
 | `isReporting` | 是否开启采集 | 默认开启 |
 | `rate` | 采集频率 | 默认 `1000` |
+
+### 当前实现
+
+已实现：
+
+- `DeviceController`
+- `DeviceService` / `DeviceServiceImpl`
+- `DeviceMapper` / `DeviceParameterMapper`
+- `DevicePageFilter`
+- `DeviceMapper.xml`
+- `CodeRuleField.DEVICE_CODE`
+
+已落地规则：
+
+- `name` 必填。
+- `name/code/uuid` 唯一校验。
+- `code` 为空时使用 `CodeRuleService#createCode(CodeRuleField.DEVICE_CODE)` 自动生成。
+- `uuid` 为空时默认等于 `code`。
+- 新增默认 `status = 4`、`alarm = 0`、`partCount = 0`、`isReporting = true`、`rate = 1000`。
+- 分页使用 MyBatis-Plus `selectPage` 和 Wrapper 条件查询。
+- 详情返回 `parameters`。
+- 新增/修改时如果传入 `parameters`，同步维护 `device_parameter` 关系。
+- 删除设备时先删除 `device_parameter` 关系，再删除设备。
 
 ### 设备状态
 
@@ -427,9 +457,52 @@
 | `POST /device/add` | 新增设备 |
 | `POST /device/update` | 修改设备 |
 | `POST /device/delete` | 删除设备 |
-| `POST /device/getDeviceConfig` | 采集端根据 UUID 获取采集配置，免登录 |
-| `POST /device/getCurrentReport` | 获取实时上报数据，免登录 |
-| `POST /device/getDevicePayloadHistory` | 获取历史采集数据，免登录 |
+| `POST /device/getDeviceConfig` | 采集端根据 UUID 获取采集配置，免登录，待第二版实现 |
+| `POST /device/getCurrentReport` | 获取实时上报数据，免登录，待第二版实现 |
+| `POST /device/getDevicePayloadHistory` | 获取历史采集数据，免登录，待第二版实现 |
+
+## 参数管理
+
+接口前缀：`/parameter`
+
+当前项目已实现第一版采集参数主数据 CRUD。
+
+### 字段
+
+| 字段 | 说明 | 规则 |
+| --- | --- | --- |
+| `code` | 参数编码 | 必填，唯一 |
+| `label` | 参数名称 | 必填，唯一 |
+| `isSystem` | 是否系统参数 | 新增默认 `false` |
+| `dataType` | 数据类型 | 可选 |
+
+### 当前实现
+
+已实现：
+
+- `ParameterController`
+- `ParameterService` / `ParameterServiceImpl`
+- `ParameterMapper`
+- `ParameterPageFilter`
+
+已落地规则：
+
+- `code` 必填。
+- `label` 必填。
+- `code/label` 唯一校验。
+- 新增时 `isSystem` 默认 `false`。
+- 系统参数不能删除。
+- 已被设备绑定的参数不能删除。
+
+### 接口
+
+| 接口 | 说明 |
+| --- | --- |
+| `POST /parameter/getPage` | 分页查询参数 |
+| `POST /parameter/getDetail` | 查询参数详情 |
+| `POST /parameter/add` | 新增参数 |
+| `POST /parameter/update` | 修改参数 |
+| `POST /parameter/delete` | 删除参数 |
 
 ### 第二版采集规则
 
@@ -458,7 +531,7 @@
 
 ### 第一阶段：补齐主数据
 
-1. 扩展 `CodeRuleField`：`MaterialCode`、`UnitCode`、`StorageCode`、`InputBillCode`、`OutputBillCode`、`MoveBillCode`。
+1. 扩展 `CodeRuleField`：`DeviceCode` 已完成；`MaterialCode`、`UnitCode`、`StorageCode`、`InputBillCode`、`OutputBillCode`、`MoveBillCode` 待补。
 2. 完善 `material`：自动编码、默认价格、单位必填。
 3. 完善 `unit`：自动编码、删除引用校验。
 4. 新增 `storage`：树形 CRUD。
@@ -479,9 +552,9 @@
 
 ### 第四阶段：设备主数据
 
-1. 新增 `device` CRUD。
-2. 新增 `parameter` CRUD。
-3. 设备绑定参数。
+1. 新增 `device` CRUD。已完成。
+2. 新增 `parameter` CRUD。已完成。
+3. 设备绑定参数。已完成。
 4. `getDeviceConfig` 免登录接口。
 
 ### 第五阶段：设备采集
@@ -494,6 +567,10 @@
 ## 第一版验收标准
 
 - 物料、单位、仓库可维护。
+- 设备可分页查询、查看详情、新增、修改、删除。
+- 设备可绑定采集参数，详情返回参数列表。
+- 参数可分页查询、查看详情、新增、修改、删除。
+- 系统参数不能删除，已被设备绑定的参数不能删除。
 - 库存可分页查询和详情查询。
 - 普通入库能增加库存。
 - 普通出库能扣减库存，库存不足时报错。

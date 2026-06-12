@@ -1,16 +1,5 @@
 # AGENTS.md
 
-## 后续模块开发约定
-
-后续新增业务模块默认使用 MyBatis-Plus 写法，不再引入 PageHelper 或旧分页模式。
-
-- 分页接口统一使用 `PageQuery<T>` 作为请求模型。
-- 分页查询统一使用 MyBatis-Plus `Page<T>` / `IPage<T>`，并通过 `PageResult.from(...)` 返回。
-- Mapper 分页方法把 `Page<T>` 放在第一个参数，查询条件统一使用 `@Param("params") Map<String, Object> params`。
-- XML 中访问查询条件时使用 `params.xxx`，不要直接使用 `xxx`。
-- 简单 CRUD 优先考虑 MyBatis-Plus 的 `BaseMapper` / Wrapper 写法；需要复杂关联、树结构、批量关系表操作或可读性更好的 SQL 时，可以继续保留 XML SQL。
-- 树结构接口仍然返回完整 `List<T>`，不要为了统一而强行分页。
-
 ## 项目概览
 
 本项目是 `spms` 后端服务，基于 Spring Boot 3.3.5、Java 17、MyBatis-Plus、MySQL、Redis。
@@ -36,10 +25,17 @@
 - 分页请求使用 `PageQuery<T>`。
 - 查询参数使用 `QueryParams` 构建，避免重复写 `filter == null ? null : filter.xxx()`。
 - 通用实体字段继承 `BaseEntity`，包括 `id`、`createTime`、`updateTime`、`isPublished`、`isDisabled`。
+- 业务编码优先使用 `CodeRuleService#createCode(...)`，枚举定义在 `CodeRuleField`。
 
 ## MyBatis-Plus 约定
 
-当前项目保留 XML SQL，不强制使用 `BaseMapper`。
+后续新增业务模块默认使用 MyBatis-Plus 写法，不再引入 PageHelper 或旧分页模式。
+
+- 分页查询统一使用 MyBatis-Plus `Page<T>` / `IPage<T>`，并通过 `PageResult.from(...)` 返回。
+- 简单 CRUD 优先使用 `BaseMapper` / Wrapper 写法。
+- 需要复杂关联、树结构、批量关系表操作或可读性更好的 SQL 时，可以继续保留 XML SQL。
+- Mapper 分页方法把 `Page<T>` 放在第一个参数，查询条件统一使用 `@Param("params") Map<String, Object> params`。
+- XML 中访问查询条件时使用 `params.xxx`，不要直接使用 `xxx`。
 
 分页 mapper 写法：
 
@@ -59,6 +55,40 @@ XML 中使用 `params.xxx`：
 ```
 
 不要手写 `limit`，由 MyBatis-Plus 分页插件处理。
+
+## 分页请求约定
+
+`PageQuery<T>` 需要同时兼容两种前端分页入参。
+
+顶层分页字段：
+
+```json
+{
+  "filter": {},
+  "pageNum": 1,
+  "pageSize": 20
+}
+```
+
+嵌套分页字段：
+
+```json
+{
+  "filter": {},
+  "page": {
+    "pageNum": 1,
+    "pageSize": 20
+  }
+}
+```
+
+`BaseService#getPageNum` 和 `BaseService#getPageSize` 负责读取分页参数：
+
+- 优先读取顶层 `pageNum/pageSize`。
+- 顶层为空时读取 `page.pageNum/pageSize`。
+- 两种都为空时使用默认值。
+
+不要把 `PageQuery.page` 写成无类型的 `Object`；应使用明确的 `PageParams`。
 
 ## XML 写法约定
 
@@ -132,6 +162,23 @@ TreeUtils.buildTree(...)
 
 原因：分页会破坏树的完整性。
 
+## 资产与 IoT 模块约定
+
+设备和参数属于资产/采集相关主数据。
+
+- `device` 第一版只实现 CRUD 和参数绑定，不接 MQTT、Redis 实时报告、InfluxDB 历史数据。
+- `parameter` 是 IoT 采集参数，字段包括 `code`、`label`、`isSystem`、`dataType`。
+- 设备与参数通过 `device_parameter` 关系表绑定。
+- 设备新增默认值：
+  - `code` 为空时使用 `CodeRuleField.DEVICE_CODE` 自动生成。
+  - `uuid` 为空时默认等于 `code`。
+  - `status = 4`，表示关机。
+  - `alarm = 0`，表示正常。
+  - `partCount = 0`。
+  - `isReporting = true`。
+  - `rate = 1000`。
+- 参数删除前必须检查是否被设备绑定；系统参数不能删除。
+
 ## 参数校验约定
 
 常用工具：
@@ -150,14 +197,30 @@ ParamUtils.trimToNull(...)
 使用 Java 17：
 
 ```bash
-env JAVA_HOME=/Users/ww/Library/Java/JavaVirtualMachines/ms-17.0.17/Contents/Home mvn -q -Dmaven.repo.local=/private/tmp/spms-m2 -DskipTests compile
+env JAVA_HOME=/Users/ww/Library/Java/JavaVirtualMachines/ms-17.0.17/Contents/Home mvn -q -DskipTests compile
+```
+
+测试编译：
+
+```bash
+env JAVA_HOME=/Users/ww/Library/Java/JavaVirtualMachines/ms-17.0.17/Contents/Home mvn -q -DskipTests test-compile
 ```
 
 完整测试：
 
 ```bash
-env JAVA_HOME=/Users/ww/Library/Java/JavaVirtualMachines/ms-17.0.17/Contents/Home mvn -q -Dmaven.repo.local=/private/tmp/spms-m2 test
+env JAVA_HOME=/Users/ww/Library/Java/JavaVirtualMachines/ms-17.0.17/Contents/Home mvn -q test
 ```
+
+如果本地 Maven 仓库权限或网络解析失败，再根据实际情况切换 `-Dmaven.repo.local=/private/tmp/spms-m2`。
+
+## CodeGraph 约定
+
+项目存在 `.codegraph` 目录，CodeGraph 由 MCP codegraph 服务生成和更新。
+
+- 用户要求更新 codegraph 时，优先使用 MCP codegraph 工具。
+- 不要手写 `.codegraph` 数据文件。
+- `.codegraph` 下数据库、缓存、日志等本地文件不提交。
 
 ## 禁止事项
 
