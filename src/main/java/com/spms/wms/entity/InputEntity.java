@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.spms.base.BaseEntity;
 import com.spms.channel.entity.PurchaseEntity;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -31,5 +30,8 @@ public class InputEntity extends BaseEntity {
     private PurchaseEntity purchase;
 
     @TableField(exist = false)
-    private List<InputDetailEntity> detailList;
+    private MoveEntity move;
+
+    @TableField(exist = false)
+    private List<InputDetailEntity> details;
 }

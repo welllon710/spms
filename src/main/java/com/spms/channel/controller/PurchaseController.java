@@ -31,17 +31,40 @@ public class PurchaseController extends ApiController {
         return Json.data(purchaseService.getPage(request), "'请求成功'");
     }
 
-
-
     @PostMapping("add")
     public Json getPurchaseList(@RequestBody PurchasePageFilter request) {
         purchaseService.add(request);
         return Json.success("采购成功");
     }
 
+    @PostMapping("update")
+    public Json update(@RequestBody PurchaseEntity request) {
+        purchaseService.update(request);
+        return Json.success("操作成功");
+    }
+
     @PostMapping("getDetail")
     public Json<PurchaseEntity> getPurchaseDetail(@RequestBody Map<String,Object> request) {
         return Json.data(purchaseService.getDetail(request));
+    }
+
+    @PostMapping("audit")
+    public Json audit(@RequestBody PurchaseEntity request) {
+        purchaseService.audit(request);
+        return Json.success("审批成功");
+    }
+
+    @PostMapping("reject")
+    public Json reject(@RequestBody PurchaseEntity request) {
+        purchaseService.reject(request);
+        return Json.success("驳回成功");
+
+    };
+
+    @PostMapping("addFinish")
+    public Json addFinish(@RequestBody Map<String, Long> request) {
+        purchaseService.addFinish(request);
+        return Json.success("操作成功");
     }
 
 }

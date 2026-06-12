@@ -3,34 +3,27 @@ package com.spms.wms.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.spms.asset.entity.MaterialEntity;
 import com.spms.base.BaseEntity;
-import com.spms.channel.entity.SaleEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-
-import java.util.List;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@TableName("output")
-public class OutputEntity extends BaseEntity {
-    private String rejectReason;
-    private String billCode;
-    private Integer status;
-    private Integer type;
-    private Long moveId;
-    private Long pickingId;
-    private Long saleId;
+@TableName("move_detail")
+public class MoveDetailEntity extends BaseEntity {
+    private Long billId;
+    private Long inventoryId;
+    private Double quantity;
+    private Double finishQuantity;
+    private Boolean isFinished;
 
     @TableField(exist = false)
-    private SaleEntity sale;
+    private InventoryEntity inventory;
 
     @TableField(exist = false)
-    private MoveEntity move;
-
-    @TableField(exist = false)
-    private List<OutputDetailEntity> details;
+    private MaterialEntity material;
 }

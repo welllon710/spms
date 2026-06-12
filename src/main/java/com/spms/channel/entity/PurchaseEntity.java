@@ -25,5 +25,5 @@ public class PurchaseEntity extends BaseEntity {
     private Double totalRealPrice;
 
     @TableField(exist = false)
-    private List<PurchaseDetailEntity> detailList;
+    private List<PurchaseDetailEntity> details;
 }

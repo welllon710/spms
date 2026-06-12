@@ -15,4 +15,12 @@ public interface PurchaseService {
     void add(PurchasePageFilter request);
 
     PurchaseEntity getDetail(Map<String, Object> request);
+
+    void audit(PurchaseEntity request);
+
+    void reject(PurchaseEntity request);
+
+    void update(PurchaseEntity request);
+
+    void addFinish(Map<String, Long> request);
 }

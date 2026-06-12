@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.spms.asset.entity.MaterialEntity;
 import com.spms.base.BaseEntity;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -25,4 +24,7 @@ public class OutputDetailEntity extends BaseEntity {
 
     @TableField(exist = false)
     private MaterialEntity material;
+
+    @TableField(exist = false)
+    private InventoryEntity inventory;
 }

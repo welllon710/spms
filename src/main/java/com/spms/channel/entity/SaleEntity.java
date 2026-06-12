@@ -2,9 +2,9 @@ package com.spms.channel.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.spms.base.BaseEntity;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -27,6 +27,7 @@ public class SaleEntity extends BaseEntity {
     @TableField(exist = false)
     private CustomerEntity customer;
 
+    @JsonAlias("details")
     @TableField(exist = false)
-    private List<SaleDetailEntity> detailList;
+    private List<SaleDetailEntity> details;
 }

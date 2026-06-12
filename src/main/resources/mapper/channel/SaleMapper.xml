@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.channel.mapper.SaleMapper">
+    <resultMap id="saleResultMap" type="com.spms.channel.entity.SaleEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="reject_reason" property="rejectReason"/>
+        <result column="bill_code" property="billCode"/>
+        <result column="reason" property="reason"/>
+        <result column="status" property="status"/>
+        <result column="total_price" property="totalPrice"/>
+        <result column="customer_id" property="customerId"/>
+
+        <association property="customer" javaType="com.spms.channel.entity.CustomerEntity">
+            <id column="customer_join_id" property="id"/>
+            <result column="customer_code" property="code"/>
+            <result column="customer_name" property="name"/>
+            <result column="customer_phone" property="phone"/>
+        </association>
+    </resultMap>
+
+    <sql id="saleColumns">
+        s.id,
+        s.create_time,
+        s.update_time,
+        s.is_disabled,
+        s.is_published,
+        s.reject_reason,
+        s.bill_code,
+        s.reason,
+        s.status,
+        s.total_price,
+        s.customer_id,
+        c.id as customer_join_id,
+        c.code as customer_code,
+        c.name as customer_name,
+        c.phone as customer_phone
+    </sql>
+
+    <sql id="saleJoinFrom">
+        from sale s
+        left join customer c on c.id = s.customer_id
+    </sql>
+
+    <select id="getPageList" resultMap="saleResultMap">
+        select
+        <include refid="saleColumns"/>
+        <include refid="saleJoinFrom"/>
+        <where>
+            <if test="params.billCode != null and params.billCode != ''">
+                and s.bill_code like concat('%', #{params.billCode}, '%')
+            </if>
+            <if test="params.status != null and params.status != ''">
+                and s.status = #{params.status}
+            </if>
+            <if test="params.customerId != null">
+                and s.customer_id = #{params.customerId}
+            </if>
+            <if test="params.customerName != null and params.customerName != ''">
+                and c.name like concat('%', #{params.customerName}, '%')
+            </if>
+            <if test="params.customerCode != null and params.customerCode != ''">
+                and c.code like concat('%', #{params.customerCode}, '%')
+            </if>
+        </where>
+        order by s.id desc
+    </select>
+
+    <select id="getById" resultMap="saleResultMap">
+        select
+        <include refid="saleColumns"/>
+        <include refid="saleJoinFrom"/>
+        where s.id = #{id}
+    </select>
+</mapper>

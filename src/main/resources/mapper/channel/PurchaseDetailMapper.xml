@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.channel.mapper.PurchaseDetailMapper">
+    <resultMap id="purchasePriceResultMap" type="com.spms.channel.entity.PurchaseDetailEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="material_id" property="materialId"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="price" property="price"/>
+        <result column="quantity" property="quantity"/>
+        <result column="finish_quantity" property="finishQuantity"/>
+        <result column="is_finished" property="isFinished"/>
+
+        <association property="material" javaType="com.spms.asset.entity.MaterialEntity">
+            <id column="material_id" property="id"/>
+            <result column="material_code" property="code"/>
+            <result column="material_name" property="name"/>
+            <result column="material_spc" property="spc"/>
+            <result column="material_type" property="materialType"/>
+            <result column="material_use_type" property="useType"/>
+            <result column="material_unit_id" property="unitId"/>
+            <result column="material_purchase_price" property="purchasePrice"/>
+            <result column="material_sale_price" property="salePrice"/>
+        </association>
+
+        <association property="supplier" javaType="com.spms.channel.entity.SupplierEntity">
+            <id column="supplier_id" property="id"/>
+            <result column="supplier_code" property="code"/>
+            <result column="supplier_name" property="name"/>
+            <result column="supplier_phone" property="phone"/>
+        </association>
+    </resultMap>
+
+    <sql id="purchasePriceColumns">
+        pp.id,
+        pp.create_time,
+        pp.update_time,
+        pp.is_disabled,
+        pp.is_published,
+        pp.material_id,
+        pp.supplier_id,
+        pp.price,
+        pp.quantity,
+        pp.finish_quantity,
+        pp.is_finished,
+        m.code as material_code,
+        m.name as material_name,
+        m.spc as material_spc,
+        m.material_type,
+        m.use_type as material_use_type,
+        m.unit_id as material_unit_id,
+        m.purchase_price as material_purchase_price,
+        m.sale_price as material_sale_price,
+        s.code as supplier_code,
+        s.name as supplier_name,
+        s.phone as supplier_phone
+    </sql>
+
+    <sql id="purchasePriceJoinFrom">
+        from purchase_detail pp
+        left join material m on m.id = pp.material_id
+        left join supplier s on s.id = pp.supplier_id
+    </sql>
+
+    <select id="getPurchaseDetailList" resultMap="purchasePriceResultMap">
+        select
+        <include refid="purchasePriceColumns"/>
+        <include refid="purchasePriceJoinFrom"/>
+        <where>
+            <if test="billId != null">
+                and pp.bill_id = #{billId}
+            </if>
+        </where>
+    </select>
+</mapper>

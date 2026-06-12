@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.spms.base.BaseEntity;
-import com.spms.channel.entity.SaleEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -15,22 +14,15 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@TableName("output")
-public class OutputEntity extends BaseEntity {
-    private String rejectReason;
-    private String billCode;
-    private Integer status;
-    private Integer type;
-    private Long moveId;
-    private Long pickingId;
-    private Long saleId;
+@TableName("storage")
+public class StorageEntity extends BaseEntity {
+    private String code;
+    private String name;
+    private Long parentId;
 
     @TableField(exist = false)
-    private SaleEntity sale;
+    private StorageEntity parent;
 
     @TableField(exist = false)
-    private MoveEntity move;
-
-    @TableField(exist = false)
-    private List<OutputDetailEntity> details;
+    private List<StorageEntity> children;
 }

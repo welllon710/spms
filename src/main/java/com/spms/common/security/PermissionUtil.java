@@ -39,7 +39,7 @@ public final class PermissionUtil {
         if (controllerName.isEmpty()) {
             return method.getName();
         }
-        return Character.toLowerCase(controllerName.charAt(0)) + controllerName.substring(1) + "_" + method.getName();
+        return controllerName.charAt(0) + controllerName.substring(1) + "_" + method.getName();
     }
 
     /**

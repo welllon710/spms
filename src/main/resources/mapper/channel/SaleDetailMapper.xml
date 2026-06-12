@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.channel.mapper.SaleDetailMapper">
+    <resultMap id="saleDetailResultMap" type="com.spms.channel.entity.SaleDetailEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="bill_id" property="billId"/>
+        <result column="material_id" property="materialId"/>
+        <result column="price" property="price"/>
+        <result column="quantity" property="quantity"/>
+        <result column="finish_quantity" property="finishQuantity"/>
+        <result column="is_finished" property="isFinished"/>
+
+        <association property="material" javaType="com.spms.asset.entity.MaterialEntity">
+            <id column="material_join_id" property="id"/>
+            <result column="material_code" property="code"/>
+            <result column="material_name" property="name"/>
+            <result column="material_spc" property="spc"/>
+            <result column="material_type" property="materialType"/>
+            <result column="material_use_type" property="useType"/>
+            <result column="material_unit_id" property="unitId"/>
+            <result column="material_purchase_price" property="purchasePrice"/>
+            <result column="material_sale_price" property="salePrice"/>
+        </association>
+    </resultMap>
+
+    <sql id="saleDetailColumns">
+        sd.id,
+        sd.create_time,
+        sd.update_time,
+        sd.is_disabled,
+        sd.is_published,
+        sd.bill_id,
+        sd.material_id,
+        sd.price,
+        sd.quantity,
+        sd.finish_quantity,
+        sd.is_finished,
+        m.id as material_join_id,
+        m.code as material_code,
+        m.name as material_name,
+        m.spc as material_spc,
+        m.material_type,
+        m.use_type as material_use_type,
+        m.unit_id as material_unit_id,
+        m.purchase_price as material_purchase_price,
+        m.sale_price as material_sale_price
+    </sql>
+
+    <sql id="saleDetailJoinFrom">
+        from sale_detail sd
+        left join material m on m.id = sd.material_id
+    </sql>
+
+    <select id="getSaleDetailList" resultMap="saleDetailResultMap">
+        select
+        <include refid="saleDetailColumns"/>
+        <include refid="saleDetailJoinFrom"/>
+        <where>
+            <if test="billId != null">
+                and sd.bill_id = #{billId}
+            </if>
+        </where>
+    </select>
+</mapper>

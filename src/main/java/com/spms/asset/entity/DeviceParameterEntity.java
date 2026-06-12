@@ -1,10 +1,10 @@
-package com.spms.wms.entity;
+package com.spms.asset.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.spms.asset.entity.MaterialEntity;
 import com.spms.base.BaseEntity;
+import com.spms.iot.entity.ParameterEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -13,14 +13,14 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@TableName("input_detail")
-public class InputDetailEntity extends BaseEntity {
-    private Long billId;
-    private Boolean isFinished;
-    private Double finishQuantity;
-    private Double quantity;
-    private Long materialId;
+@TableName("device_parameter")
+public class DeviceParameterEntity extends BaseEntity {
+    private Long deviceId;
+    private Long parameterId;
 
     @TableField(exist = false)
-    private MaterialEntity material;
+    private DeviceEntity device;
+
+    @TableField(exist = false)
+    private ParameterEntity parameter;
 }
