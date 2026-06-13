@@ -1,0 +1,27 @@
+package com.spms.wms.controller;
+
+
+import com.spms.base.Api;
+import com.spms.base.PageQuery;
+import com.spms.common.result.Json;
+import com.spms.common.result.PageResult;
+import com.spms.common.security.Permission;
+import com.spms.wms.entity.InventoryEntity;
+import com.spms.wms.model.InventoryPageFilter;
+import com.spms.wms.service.InventoryService;
+import lombok.AllArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+@Permission
+@Api("inventory")
+@AllArgsConstructor
+public class InventoryController {
+
+    private final InventoryService inventoryService;
+
+    @PostMapping("getPage")
+    public Json<PageResult<InventoryEntity>> getPage(@RequestBody PageQuery<InventoryPageFilter> request) {
+        return Json.data(inventoryService.getPage(request));
+    }
+}

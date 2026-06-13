@@ -9,7 +9,7 @@ public interface DeviceParameterMapper extends BaseMapper<DeviceParameterEntity>
     default long countByParameterId(Long parameterId) {
         return selectCount(
                 com.baomidou.mybatisplus.core.toolkit.Wrappers.<DeviceParameterEntity>lambdaQuery()
-                        .eq(DeviceParameterEntity::getParameterId, parameterId)
+                        .eq(DeviceParameterEntity::getParametersId, parameterId)
         );
     }
 }

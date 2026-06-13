@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.wms.mapper.InventoryMapper">
+    <resultMap id="inventoryResultMap" type="com.spms.wms.entity.InventoryEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="material_id" property="materialId"/>
+        <result column="quantity" property="quantity"/>
+        <result column="type" property="type"/>
+        <result column="storage_id" property="storageId"/>
+        <result column="structure_id" property="structureId"/>
+
+        <association property="material" javaType="com.spms.asset.entity.MaterialEntity">
+            <id column="material_join_id" property="id"/>
+            <result column="material_code" property="code"/>
+            <result column="material_name" property="name"/>
+            <result column="material_spc" property="spc"/>
+            <result column="material_type" property="materialType"/>
+            <result column="material_use_type" property="useType"/>
+            <result column="material_unit_id" property="unitId"/>
+            <result column="material_purchase_price" property="purchasePrice"/>
+            <result column="material_sale_price" property="salePrice"/>
+
+            <association property="unit" javaType="com.spms.personal.entity.UnitEntity">
+                <id column="unit_join_id" property="id"/>
+                <result column="unit_name" property="name"/>
+                <result column="unit_code" property="code"/>
+            </association>
+        </association>
+
+        <association property="storage" javaType="com.spms.wms.entity.StorageEntity">
+            <id column="storage_join_id" property="id"/>
+            <result column="storage_code" property="code"/>
+            <result column="storage_name" property="name"/>
+            <result column="storage_parent_id" property="parentId"/>
+        </association>
+    </resultMap>
+
+    <sql id="inventoryColumns">
+        inv.id,
+        inv.create_time,
+        inv.update_time,
+        inv.is_disabled,
+        inv.is_published,
+        inv.material_id,
+        inv.quantity,
+        inv.type,
+        inv.storage_id,
+        inv.structure_id,
+        m.id as material_join_id,
+        m.code as material_code,
+        m.name as material_name,
+        m.spc as material_spc,
+        m.material_type,
+        m.use_type as material_use_type,
+        m.unit_id as material_unit_id,
+        m.purchase_price as material_purchase_price,
+        m.sale_price as material_sale_price,
+        u.id as unit_join_id,
+        u.name as unit_name,
+        u.code as unit_code,
+        s.id as storage_join_id,
+        s.code as storage_code,
+        s.name as storage_name,
+        s.parent_id as storage_parent_id
+    </sql>
+
+    <sql id="inventoryJoinFrom">
+        from inventory inv
+        left join material m on inv.material_id = m.id
+        left join unit u on u.id = m.unit_id
+        left join storage s on inv.storage_id = s.id
+    </sql>
+
+    <select id="getPageList" resultMap="inventoryResultMap">
+        select
+        <include refid="inventoryColumns"/>
+        <include refid="inventoryJoinFrom"/>
+        <where>
+            <if test="params.storageId != null and params.storageId != ''">
+                and inv.storage_id = #{params.storageId}
+            </if>
+            <if test="params.type != null and params.type != ''">
+                and inv.type = #{params.type}
+            </if>
+        </where>
+        order by inv.id desc
+    </select>
+</mapper>

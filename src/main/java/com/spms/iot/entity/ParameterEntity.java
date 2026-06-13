@@ -11,7 +11,7 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@TableName("parameter")
+@TableName("parameters")
 public class ParameterEntity extends BaseEntity {
     private String code;
     private String label;

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.wms.mapper.InputMapper">
+    <resultMap id="inputResultMap" type="com.spms.wms.entity.InputEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="reject_reason" property="rejectReason"/>
+        <result column="bill_code" property="billCode"/>
+        <result column="status" property="status"/>
+        <result column="type" property="type"/>
+        <result column="move_id" property="moveId"/>
+        <result column="order_id" property="orderId"/>
+        <result column="purchase_id" property="purchaseId"/>
+        <result column="structure_id" property="structureId"/>
+
+        <association property="purchase" javaType="com.spms.channel.entity.PurchaseEntity">
+            <id column="purchase_join_id" property="id"/>
+            <result column="purchase_bill_code" property="billCode"/>
+            <result column="purchase_reason" property="reason"/>
+            <result column="purchase_status" property="status"/>
+            <result column="purchase_total_price" property="totalPrice"/>
+            <result column="purchase_total_real_price" property="totalRealPrice"/>
+        </association>
+
+        <association property="move" javaType="com.spms.wms.entity.MoveEntity">
+            <id column="move_join_id" property="id"/>
+            <result column="move_bill_code" property="billCode"/>
+            <result column="move_status" property="status"/>
+            <result column="move_storage_id" property="storageId"/>
+        </association>
+    </resultMap>
+
+    <sql id="inputColumns">
+        i.id,
+        i.create_time,
+        i.update_time,
+        i.is_disabled,
+        i.is_published,
+        i.reject_reason,
+        i.bill_code,
+        i.status,
+        i.type,
+        i.move_id,
+        i.order_id,
+        i.purchase_id,
+        i.structure_id,
+        p.id as purchase_join_id,
+        p.bill_code as purchase_bill_code,
+        p.reason as purchase_reason,
+        p.status as purchase_status,
+        p.total_price as purchase_total_price,
+        p.total_real_price as purchase_total_real_price,
+        mv.id as move_join_id,
+        mv.bill_code as move_bill_code,
+        mv.status as move_status,
+        mv.storage_id as move_storage_id
+    </sql>
+
+    <sql id="inputJoinFrom">
+        from `input` i
+        left join purchase p on p.id = i.purchase_id
+        left join `move` mv on mv.id = i.move_id
+    </sql>
+
+    <select id="getPageList" resultMap="inputResultMap">
+        select
+        <include refid="inputColumns"/>
+        <include refid="inputJoinFrom"/>
+        <where>
+            <if test="params.billCode != null and params.billCode != ''">
+                and i.bill_code like concat('%', #{params.billCode}, '%')
+            </if>
+            <if test="params.status != null">
+                and i.status = #{params.status}
+            </if>
+            <if test="params.type != null">
+                and i.type = #{params.type}
+            </if>
+            <if test="params.purchaseId != null">
+                and i.purchase_id = #{params.purchaseId}
+            </if>
+            <if test="params.moveId != null">
+                and i.move_id = #{params.moveId}
+            </if>
+        </where>
+        order by i.id desc
+    </select>
+
+    <select id="getById" resultMap="inputResultMap">
+        select
+        <include refid="inputColumns"/>
+        <include refid="inputJoinFrom"/>
+        where i.id = #{id}
+    </select>
+</mapper>

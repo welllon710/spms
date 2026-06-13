@@ -182,26 +182,16 @@ public class DeviceServiceImpl extends BaseService<DeviceEntity> implements Devi
             requireNotNull(parameter, "设备参数不能为空");
             requireId(parameter.getId(), "设备参数ID不能为空");
             DeviceParameterEntity relation = new DeviceParameterEntity();
-            relation.setDeviceId(deviceId);
-            relation.setParameterId(parameter.getId());
-            initAddRelation(relation);
+            relation.setDeviceEntityId(deviceId);
+            relation.setParametersId(parameter.getId());
             deviceParameterMapper.insert(relation);
         }
-    }
-
-    private void initAddRelation(DeviceParameterEntity relation) {
-        long now = System.currentTimeMillis();
-        relation.setId(null);
-        relation.setCreateTime(now);
-        relation.setUpdateTime(now);
-        relation.setIsDisabled(false);
-        relation.setIsPublished(false);
     }
 
     private void deleteParameterRelations(Long deviceId) {
         deviceParameterMapper.delete(
                 Wrappers.<DeviceParameterEntity>lambdaQuery()
-                        .eq(DeviceParameterEntity::getDeviceId, deviceId)
+                        .eq(DeviceParameterEntity::getDeviceEntityId, deviceId)
         );
     }
 

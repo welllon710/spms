@@ -13,14 +13,14 @@ import lombok.experimental.Accessors;
 @EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@TableName("device_parameter")
+@TableName("device_parameters")
 public class DeviceParameterEntity extends BaseEntity {
-    private Long deviceId;
-    private Long parameterId;
+    private Long deviceEntityId;
+    private Long parametersId;
 
     @TableField(exist = false)
     private DeviceEntity device;
 
     @TableField(exist = false)
-    private ParameterEntity parameter;
+    private ParameterEntity parameters;
 }
