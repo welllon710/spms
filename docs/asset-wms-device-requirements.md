@@ -8,7 +8,10 @@
 - `asset/device`：设备 CRUD 基础实现，支持设备参数绑定。
 - `iot/parameter`：采集参数 CRUD 基础实现。
 - `personal/unit`：单位 CRUD 基础实现。
-- `wms/entity`：`input`、`input_detail`、`output`、`output_detail` 实体骨架。
+- `wms/storage`：仓库 CRUD 基础实现。
+- `wms/inventory`：库存分页查询实现，返回物料、单位、仓库信息。
+- `wms/input`：入库单第一版流程已实现，包括新增、修改、详情、分页、审核、驳回、执行入库。
+- `wms/entity`：`output`、`output_detail`、`move`、`move_detail` 仍以实体骨架为主。
 - `system/coderule`：编码规则实体和轻量编码服务。
 
 后续实现仍按当前项目约定：新增业务模块优先使用 MyBatis-Plus，分页使用 `PageQuery<T>`、`Page<T>` / `IPage<T>` 和 `PageResult<T>`。`PageQuery<T>` 需要兼容顶层 `pageNum/pageSize` 和嵌套 `page.pageNum/pageSize` 两种前端入参。
@@ -34,10 +37,10 @@
 | `device` | 设备主数据 | 当前项目已有 CRUD |
 | `parameter` | 设备采集参数 | 当前项目已有 CRUD，属于 IoT 参数 |
 | `device_parameter` | 设备与参数多对多 | 当前项目已有绑定关系维护 |
-| `storage` | 仓库/库位 | 待实现，树形结构 |
-| `inventory` | 库存 | 待实现 |
-| `input` | 入库单 | 当前仅有实体骨架 |
-| `input_detail` | 入库明细 | 当前仅有实体骨架 |
+| `storage` | 仓库/库位 | 当前已有基础 CRUD 和树形列表 |
+| `inventory` | 库存 | 当前已有分页查询，执行入库时会新增或累加库存 |
+| `input` | 入库单 | 当前已实现第一版流程 |
+| `input_detail` | 入库明细 | 当前已实现第一版流程 |
 | `output` | 出库单 | 当前仅有实体骨架 |
 | `output_detail` | 出库明细 | 当前仅有实体骨架 |
 | `move` | 移库单 | 待实现 |
@@ -64,6 +67,7 @@
 当前已落地：
 
 - `CodeRuleField.DEVICE_CODE`：设备编码。
+- `CodeRuleField.INPUT_BILL_CODE`：入库单号。
 - 采购/销售单号相关编码规则在渠道模块中使用。
 
 ## 物料管理
@@ -193,6 +197,17 @@
 
 接口前缀：`/input`
 
+当前项目已实现第一版普通入库流程：
+
+- `InputController`
+- `InputService` / `InputServiceImpl`
+- `InputMapper` / `InputDetailMapper`
+- `InputPageFilter`
+- `InputFinishRequest`
+- `InputStatus` / `InputType`
+
+已实现范围包括：分页、详情、新增、修改、审核、驳回、执行入库并增加库存。
+
 ### 主表字段：`input`
 
 | 字段 | 说明 |
@@ -246,19 +261,47 @@
 | `POST /input/reject` | 驳回，记录驳回原因 |
 | `POST /input/addFinish` | 执行入库，增加库存 |
 
+### 请求模型
+
+分页查询使用 `PageQuery<InputPageFilter>`：
+
+| 字段 | 说明 |
+| --- | --- |
+| `billCode` | 按入库单号模糊查询 |
+| `status` | 入库状态 |
+| `type` | 入库类型 |
+| `purchaseId` | 采购单 ID |
+| `moveId` | 移库单 ID |
+
+执行入库使用 `InputFinishRequest`：
+
+| 字段 | 说明 | 规则 |
+| --- | --- | --- |
+| `id` | 入库明细 ID | 必填，不是入库单 ID |
+| `quantity` | 本次入库数量 | 必填，必须大于 `0` |
+| `storageId` | 目标仓库 ID | 与 `storage.id` 二选一 |
+| `storage` | 目标仓库对象 | 支持读取 `storage.id` |
+
 ### 规则
 
 - 新增必须带明细。
 - `billCode` 为空时生成 `InputBillCode`。
 - 新增状态默认 `审核中`。
 - 只有 `审核中` 能审核或驳回。
+- 修改只允许在未进入 `入库中` 或 `已完成` 前进行；修改后状态回到 `审核中`。
+- 驳回必须传 `rejectReason`。
 - 执行入库时请求中的 `id` 是明细 ID，不是单据 ID。
 - 执行入库必须传入目标仓库。
 - 本次入库数量累加到明细 `finishQuantity`。
+- 本次入库数量必须大于 `0`。
+- 累计 `finishQuantity` 不能超过明细 `quantity`。
 - `finishQuantity >= quantity` 时明细完成。
 - 所有明细完成后，入库单状态变 `已完成`。
 - 库存不存在则创建，存在则增加数量。
-- 采购入库完成后，需要回写采购单完成数量和状态。
+- 当前第一版只处理仓库库存，库存类型固定为 `1`。
+- 详情查询返回明细，明细会带 `material` 和 `material.unit`。
+- 分页查询返回采购单/移库单的基础关联信息。
+- 采购入库完成后回写采购单完成数量和状态，属于后续渠道联动阶段，当前未实现。
 
 ## 出库单
 
@@ -531,15 +574,15 @@
 
 ### 第一阶段：补齐主数据
 
-1. 扩展 `CodeRuleField`：`DeviceCode` 已完成；`MaterialCode`、`UnitCode`、`StorageCode`、`InputBillCode`、`OutputBillCode`、`MoveBillCode` 待补。
+1. 扩展 `CodeRuleField`：`DeviceCode`、`InputBillCode` 已完成；`MaterialCode`、`UnitCode`、`StorageCode`、`OutputBillCode`、`MoveBillCode` 待补或待校准。
 2. 完善 `material`：自动编码、默认价格、单位必填。
 3. 完善 `unit`：自动编码、删除引用校验。
 4. 新增 `storage`：树形 CRUD。
 
 ### 第二阶段：库存核心
 
-1. 新增 `inventory`：分页、详情、内部增减库存能力。
-2. 新增 `input` / `input_detail`：普通入库完整流程。
+1. 新增 `inventory`：分页查询已完成；详情和独立内部服务能力待补。
+2. 新增 `input` / `input_detail`：普通入库第一版流程已完成。
 3. 新增 `output` / `output_detail`：普通出库完整流程。
 4. 新增 `move` / `move_detail`：移库完整流程。
 
@@ -571,8 +614,9 @@
 - 设备可绑定采集参数，详情返回参数列表。
 - 参数可分页查询、查看详情、新增、修改、删除。
 - 系统参数不能删除，已被设备绑定的参数不能删除。
-- 库存可分页查询和详情查询。
-- 普通入库能增加库存。
+- 库存可分页查询，分页结果返回物料、物料单位和仓库。
+- 普通入库能新增单据、修改单据、查询详情、分页查询、审核、驳回、执行入库。
+- 普通入库执行时能创建或累加仓库库存，并在所有明细完成后把入库单标记为已完成。
 - 普通出库能扣减库存，库存不足时报错。
 - 移库能从来源库存扣减并增加目标仓库存。
 - 出入库/移库单据具备新增、修改、详情、分页、审核、驳回、完成数量接口。
