@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.wms.mapper.OutputMapper">
+    <resultMap id="outputResultMap" type="com.spms.wms.entity.OutputEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="reject_reason" property="rejectReason"/>
+        <result column="bill_code" property="billCode"/>
+        <result column="status" property="status"/>
+        <result column="type" property="type"/>
+        <result column="move_id" property="moveId"/>
+        <result column="picking_id" property="pickingId"/>
+        <result column="sale_id" property="saleId"/>
+
+        <association property="sale" javaType="com.spms.channel.entity.SaleEntity">
+            <id column="sale_join_id" property="id"/>
+            <result column="sale_bill_code" property="billCode"/>
+            <result column="sale_reason" property="reason"/>
+            <result column="sale_status" property="status"/>
+            <result column="sale_total_price" property="totalPrice"/>
+            <result column="sale_customer_id" property="customerId"/>
+        </association>
+
+        <association property="move" javaType="com.spms.wms.entity.MoveEntity">
+            <id column="move_join_id" property="id"/>
+            <result column="move_bill_code" property="billCode"/>
+            <result column="move_status" property="status"/>
+            <result column="move_storage_id" property="storageId"/>
+        </association>
+    </resultMap>
+
+    <sql id="outputColumns">
+        o.id,
+        o.create_time,
+        o.update_time,
+        o.is_disabled,
+        o.is_published,
+        o.reject_reason,
+        o.bill_code,
+        o.status,
+        o.type,
+        o.move_id,
+        o.picking_id,
+        o.sale_id,
+        s.id as sale_join_id,
+        s.bill_code as sale_bill_code,
+        s.reason as sale_reason,
+        s.status as sale_status,
+        s.total_price as sale_total_price,
+        s.customer_id as sale_customer_id,
+        mv.id as move_join_id,
+        mv.bill_code as move_bill_code,
+        mv.status as move_status,
+        mv.storage_id as move_storage_id
+    </sql>
+
+    <sql id="outputJoinFrom">
+        from `output` o
+        left join sale s on s.id = o.sale_id
+        left join `move` mv on mv.id = o.move_id
+    </sql>
+
+    <select id="getPageList" resultMap="outputResultMap">
+        select
+        <include refid="outputColumns"/>
+        <include refid="outputJoinFrom"/>
+        <where>
+            <if test="params.billCode != null and params.billCode != ''">
+                and o.bill_code like concat('%', #{params.billCode}, '%')
+            </if>
+            <if test="params.status != null">
+                and o.status = #{params.status}
+            </if>
+            <if test="params.type != null">
+                and o.type = #{params.type}
+            </if>
+            <if test="params.saleId != null">
+                and o.sale_id = #{params.saleId}
+            </if>
+            <if test="params.moveId != null">
+                and o.move_id = #{params.moveId}
+            </if>
+            <if test="params.pickingId != null">
+                and o.picking_id = #{params.pickingId}
+            </if>
+        </where>
+        order by o.id desc
+    </select>
+
+    <select id="getById" resultMap="outputResultMap">
+        select
+        <include refid="outputColumns"/>
+        <include refid="outputJoinFrom"/>
+        where o.id = #{id}
+    </select>
+</mapper>

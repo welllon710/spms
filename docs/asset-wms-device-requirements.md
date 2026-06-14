@@ -11,7 +11,8 @@
 - `wms/storage`：仓库 CRUD 基础实现。
 - `wms/inventory`：库存分页查询实现，返回物料、单位、仓库信息。
 - `wms/input`：入库单第一版流程已实现，包括新增、修改、详情、分页、审核、驳回、执行入库。
-- `wms/entity`：`output`、`output_detail`、`move`、`move_detail` 仍以实体骨架为主。
+- `wms/output`：出库单第一版流程已实现，包括新增、修改、详情、分页、审核、驳回、执行出库。
+- `wms/entity`：`move`、`move_detail` 仍以实体骨架为主。
 - `system/coderule`：编码规则实体和轻量编码服务。
 
 后续实现仍按当前项目约定：新增业务模块优先使用 MyBatis-Plus，分页使用 `PageQuery<T>`、`Page<T>` / `IPage<T>` 和 `PageResult<T>`。`PageQuery<T>` 需要兼容顶层 `pageNum/pageSize` 和嵌套 `page.pageNum/pageSize` 两种前端入参。
@@ -41,8 +42,8 @@
 | `inventory` | 库存 | 当前已有分页查询，执行入库时会新增或累加库存 |
 | `input` | 入库单 | 当前已实现第一版流程 |
 | `input_detail` | 入库明细 | 当前已实现第一版流程 |
-| `output` | 出库单 | 当前仅有实体骨架 |
-| `output_detail` | 出库明细 | 当前仅有实体骨架 |
+| `output` | 出库单 | 当前已实现第一版流程 |
+| `output_detail` | 出库明细 | 当前已实现第一版流程 |
 | `move` | 移库单 | 待实现 |
 | `move_detail` | 移库明细 | 待实现 |
 | `coderule` | 编码规则 | 当前项目已有轻量服务 |
@@ -68,6 +69,7 @@
 
 - `CodeRuleField.DEVICE_CODE`：设备编码。
 - `CodeRuleField.INPUT_BILL_CODE`：入库单号。
+- `CodeRuleField.OUTPUT_BILL_CODE`：出库单号。
 - 采购/销售单号相关编码规则在渠道模块中使用。
 
 ## 物料管理
@@ -307,6 +309,8 @@
 
 接口前缀：`/output`
 
+当前项目已实现普通出库第一版流程：分页、详情、新增、修改、审核、驳回、执行出库。执行出库时会扣减来源库存，并在全部明细完成后将出库单置为已完成。
+
 ### 主表字段：`output`
 
 | 字段 | 说明 |
@@ -373,7 +377,7 @@
 - 本次出库数量累加到明细 `finishQuantity`。
 - `finishQuantity >= quantity` 时明细完成。
 - 所有明细完成后，出库单状态变 `已完成`。
-- 销售出库完成后，需要回写销售单完成数量和状态。
+- 销售出库完成后，需要回写销售单完成数量和状态。当前属于后续渠道联动阶段，暂未实现。
 
 ## 移库单
 
@@ -574,7 +578,7 @@
 
 ### 第一阶段：补齐主数据
 
-1. 扩展 `CodeRuleField`：`DeviceCode`、`InputBillCode` 已完成；`MaterialCode`、`UnitCode`、`StorageCode`、`OutputBillCode`、`MoveBillCode` 待补或待校准。
+1. 扩展 `CodeRuleField`：`DeviceCode`、`InputBillCode`、`OutputBillCode` 已完成；`MaterialCode`、`UnitCode`、`StorageCode`、`MoveBillCode` 待补或待校准。
 2. 完善 `material`：自动编码、默认价格、单位必填。
 3. 完善 `unit`：自动编码、删除引用校验。
 4. 新增 `storage`：树形 CRUD。
@@ -583,7 +587,7 @@
 
 1. 新增 `inventory`：分页查询已完成；详情和独立内部服务能力待补。
 2. 新增 `input` / `input_detail`：普通入库第一版流程已完成。
-3. 新增 `output` / `output_detail`：普通出库完整流程。
+3. 新增 `output` / `output_detail`：普通出库第一版流程已完成。
 4. 新增 `move` / `move_detail`：移库完整流程。
 
 ### 第三阶段：渠道联动

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.wms.mapper.OutputDetailMapper">
+    <resultMap id="outputDetailResultMap" type="com.spms.wms.entity.OutputDetailEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="bill_id" property="billId"/>
+        <result column="is_finished" property="isFinished"/>
+        <result column="finish_quantity" property="finishQuantity"/>
+        <result column="quantity" property="quantity"/>
+        <result column="inventory_id" property="inventoryId"/>
+        <result column="material_id" property="materialId"/>
+
+        <association property="material" javaType="com.spms.asset.entity.MaterialEntity">
+            <id column="material_join_id" property="id"/>
+            <result column="material_code" property="code"/>
+            <result column="material_name" property="name"/>
+            <result column="material_spc" property="spc"/>
+            <result column="material_type" property="materialType"/>
+            <result column="material_use_type" property="useType"/>
+            <result column="material_unit_id" property="unitId"/>
+            <result column="material_purchase_price" property="purchasePrice"/>
+            <result column="material_sale_price" property="salePrice"/>
+
+            <association property="unit" javaType="com.spms.personal.entity.UnitEntity">
+                <id column="unit_join_id" property="id"/>
+                <result column="unit_name" property="name"/>
+                <result column="unit_code" property="code"/>
+            </association>
+        </association>
+
+        <association property="inventory" javaType="com.spms.wms.entity.InventoryEntity">
+            <id column="inventory_join_id" property="id"/>
+            <result column="inventory_material_id" property="materialId"/>
+            <result column="inventory_quantity" property="quantity"/>
+            <result column="inventory_type" property="type"/>
+            <result column="inventory_storage_id" property="storageId"/>
+            <result column="inventory_structure_id" property="structureId"/>
+
+            <association property="storage" javaType="com.spms.wms.entity.StorageEntity">
+                <id column="storage_join_id" property="id"/>
+                <result column="storage_code" property="code"/>
+                <result column="storage_name" property="name"/>
+                <result column="storage_parent_id" property="parentId"/>
+            </association>
+        </association>
+    </resultMap>
+
+    <sql id="outputDetailColumns">
+        od.id,
+        od.create_time,
+        od.update_time,
+        od.is_disabled,
+        od.is_published,
+        od.bill_id,
+        od.is_finished,
+        od.finish_quantity,
+        od.quantity,
+        od.inventory_id,
+        od.material_id,
+        m.id as material_join_id,
+        m.code as material_code,
+        m.name as material_name,
+        m.spc as material_spc,
+        m.material_type,
+        m.use_type as material_use_type,
+        m.unit_id as material_unit_id,
+        m.purchase_price as material_purchase_price,
+        m.sale_price as material_sale_price,
+        u.id as unit_join_id,
+        u.name as unit_name,
+        u.code as unit_code,
+        inv.id as inventory_join_id,
+        inv.material_id as inventory_material_id,
+        inv.quantity as inventory_quantity,
+        inv.type as inventory_type,
+        inv.storage_id as inventory_storage_id,
+        inv.structure_id as inventory_structure_id,
+        st.id as storage_join_id,
+        st.code as storage_code,
+        st.name as storage_name,
+        st.parent_id as storage_parent_id
+    </sql>
+
+    <sql id="outputDetailJoinFrom">
+        from output_detail od
+        left join material m on m.id = od.material_id
+        left join `unit` u on u.id = m.unit_id
+        left join inventory inv on inv.id = od.inventory_id
+        left join storage st on st.id = inv.storage_id
+    </sql>
+
+    <select id="getByBillId" resultMap="outputDetailResultMap">
+        select
+        <include refid="outputDetailColumns"/>
+        <include refid="outputDetailJoinFrom"/>
+        where od.bill_id = #{billId}
+        order by od.id asc
+    </select>
+</mapper>
