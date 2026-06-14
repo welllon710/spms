@@ -7,4 +7,6 @@ import com.spms.wms.model.InventoryPageFilter;
 
 public interface InventoryService {
     PageResult<InventoryEntity> getPage(PageQuery<InventoryPageFilter> request);
+
+    InventoryEntity getDetail(Long id);
 }

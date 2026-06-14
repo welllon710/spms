@@ -14,10 +14,13 @@ import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.common.result.PageResult;
 import com.spms.common.util.QueryParams;
+import com.spms.system.enums.CodeRuleField;
+import com.spms.system.service.CodeRuleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import static com.spms.common.util.ParamUtils.requireId;
@@ -31,6 +34,7 @@ public class MaterialServiceImpl extends BaseService<MaterialEntity> implements 
     private static final SortParam DEFAULT_SORT = new SortParam("id", "desc");
 
     private final MaterialMapper materialMapper;
+    private final CodeRuleService codeRuleService;
 
     @Override
     public PageResult<MaterialEntity> getPage(PageQuery<MaterialPageFilter> request) {
@@ -57,7 +61,6 @@ public class MaterialServiceImpl extends BaseService<MaterialEntity> implements 
     @Transactional(rollbackFor = Exception.class)
     public MaterialEntity add(MaterialEntity material) {
         validateMaterial(material, false);
-        initAddEntity(material);
         checkDuplicate(material.getName(), material.getCode(), null);
         materialMapper.insert(material);
         return material;
@@ -70,7 +73,6 @@ public class MaterialServiceImpl extends BaseService<MaterialEntity> implements 
         MaterialEntity exist = getRequiredMaterial(material.getId());
         checkEditable(exist);
         checkDuplicate(material.getName(), material.getCode(), material.getId());
-        initUpdateEntity(material);
         if (material.getIsDisabled() == null) {
             material.setIsDisabled(exist.getIsDisabled());
         }
@@ -104,7 +106,16 @@ public class MaterialServiceImpl extends BaseService<MaterialEntity> implements 
         material.setCode(trimToNull(material.getCode()));
         material.setSpc(trimToNull(material.getSpc()));
         requireText(material.getName(), "物料名称不能为空");
-        requireText(material.getCode(), "物料编码不能为空");
+        requireId(material.getUnitId(), "物料单位不能为空");
+        if (material.getCode() == null) {
+            material.setCode(codeRuleService.createCode(CodeRuleField.MATERIAL_CODE));
+        }
+        if (material.getPurchasePrice() == null) {
+            material.setPurchasePrice(BigDecimal.ZERO);
+        }
+        if (material.getSalePrice() == null) {
+            material.setSalePrice(BigDecimal.ZERO);
+        }
     }
 
     private void checkDuplicate(String name, String code, Long excludeId) {

@@ -3,23 +3,25 @@ package com.spms.wms.service;
 import com.spms.base.PageQuery;
 import com.spms.common.result.PageResult;
 import com.spms.wms.entity.InputEntity;
+import com.spms.wms.model.InputAddRequest;
 import com.spms.wms.model.InputFinishRequest;
+import com.spms.wms.model.InputUpdateRequest;
+import com.spms.base.IdRequest;
+import com.spms.base.RejectRequest;
 import com.spms.wms.model.InputPageFilter;
-
-import java.util.Map;
 
 public interface InputService {
     PageResult<InputEntity> getPage(PageQuery<InputPageFilter> request);
 
-    void add(InputEntity request);
+    void add(InputAddRequest request);
 
-    void update(InputEntity request);
+    void update(InputUpdateRequest request);
 
-    InputEntity getDetail(Map<String, Object> request);
+    InputEntity getDetail(IdRequest request);
 
-    void audit(InputEntity request);
+    void audit(IdRequest request);
 
-    void reject(InputEntity request);
+    void reject(RejectRequest request);
 
     void addFinish(InputFinishRequest request);
 }

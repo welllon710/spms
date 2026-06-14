@@ -11,7 +11,10 @@ public enum CodeRuleField {
     SALE_BILL_CODE(9, "销售单号", "SL", SerialNumberUpdate.DAY),
     INPUT_BILL_CODE(10, "入库单号", "IN", SerialNumberUpdate.DAY),
     OUTPUT_BILL_CODE(11, "出库单号", "OUT", SerialNumberUpdate.DAY),
-    STORAGE_CODE(6, "仓库编码", "SR",SerialNumberUpdate.DAY);
+    MOVE_BILL_CODE(12, "移库单号", "MV", SerialNumberUpdate.DAY),
+    STORAGE_CODE(13, "仓库编码", "ST", SerialNumberUpdate.YEAR),
+    MATERIAL_CODE(14, "物料编码", "MT", SerialNumberUpdate.YEAR),
+    UNIT_CODE(15, "单位编码", "UN", SerialNumberUpdate.YEAR);
 
     private final int key;
     private final String name;

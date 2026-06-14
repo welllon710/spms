@@ -1,6 +1,9 @@
 package com.spms.wms.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Positive;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.spms.base.BaseEntity;
@@ -24,6 +27,7 @@ public class InputEntity extends BaseEntity {
     private Long moveId;
     private Long orderId;
     private Long purchaseId;
+    @Positive(message = "移库单关联ID须大于0")
     private Long structureId;
 
     @TableField(exist = false)
@@ -32,6 +36,8 @@ public class InputEntity extends BaseEntity {
     @TableField(exist = false)
     private MoveEntity move;
 
+    @Valid
+    @NotEmpty(message = "入库明细不能为空")
     @TableField(exist = false)
     private List<InputDetailEntity> details;
 }

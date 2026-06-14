@@ -2,8 +2,8 @@ package com.spms.wms.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.spms.base.BaseEntity;
 import com.spms.base.BaseService;
+import com.spms.base.IdRequest;
 import com.spms.base.PageQuery;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
@@ -20,21 +20,23 @@ import com.spms.wms.enums.InputType;
 import com.spms.wms.mapper.InputDetailMapper;
 import com.spms.wms.mapper.InputMapper;
 import com.spms.wms.mapper.InventoryMapper;
+import com.spms.wms.model.InputAddRequest;
 import com.spms.wms.model.InputFinishRequest;
 import com.spms.wms.model.InputPageFilter;
+import com.spms.wms.model.InputUpdateRequest;
 import com.spms.wms.service.InputService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.spms.base.RejectRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 import static com.spms.common.util.ParamUtils.requireId;
-import static com.spms.common.util.ParamUtils.requireNotNull;
-import static com.spms.common.util.ParamUtils.requireText;
+import static com.spms.common.util.ParamUtils.requirePositiveQuantity;
 import static com.spms.common.util.ParamUtils.trimToNull;
 
 @Service
@@ -63,92 +65,85 @@ public class InputServiceImpl extends BaseService<InputEntity> implements InputS
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void add(InputEntity request) {
-        validateInput(request, false);
-        List<InputDetailEntity> details = request.getDetails();
-
+    public void add(InputAddRequest request) {
         InputEntity input = new InputEntity();
-        BeanUtils.copyProperties(request, input);
-        input.setBillCode(resolveBillCode(request.getBillCode()))
+        input.setBillCode(resolveBillCode(request.billCode()))
                 .setStatus(InputStatus.AUDITING.getValue())
-                .setType(request.getType() == null ? InputType.NORMAL.getValue() : request.getType());
-        initAddEntity(input);
+                .setType(request.type() == null ? InputType.NORMAL.getValue() : request.type())
+                .setMoveId(request.moveId())
+                .setOrderId(request.orderId())
+                .setPurchaseId(request.purchaseId())
+                .setStructureId(request.structureId());
         inputMapper.insert(input);
 
-        saveDetails(input.getId(), details);
+        saveDetails(input.getId(), request.details());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void update(InputEntity request) {
-        validateInput(request, true);
-        InputEntity exist = getRequiredInput(request.getId());
+    public void update(InputUpdateRequest request) {
+        InputEntity exist = getRequiredInput(request.id());
         if (InputStatus.INPUTTING.getValue().equals(exist.getStatus())
                 || InputStatus.FINISHED.getValue().equals(exist.getStatus())) {
             throw new AppException(CommonError.PARAM_INVALID, "当前入库单状态无法修改");
         }
 
         inputDetailMapper.delete(Wrappers.<InputDetailEntity>lambdaQuery()
-                .eq(InputDetailEntity::getBillId, request.getId()));
+                .eq(InputDetailEntity::getBillId, request.id()));
 
         InputEntity input = new InputEntity();
-        BeanUtils.copyProperties(request, input);
-        input.setBillCode(resolveUpdateBillCode(request.getBillCode(), exist.getBillCode()))
+        input.setId(request.id());
+        input.setBillCode(resolveUpdateBillCode(request.billCode(), exist.getBillCode()))
                 .setStatus(InputStatus.AUDITING.getValue())
-                .setType(request.getType() == null ? InputType.NORMAL.getValue() : request.getType());
-        initUpdateEntity(input);
+                .setType(request.type() == null ? InputType.NORMAL.getValue() : request.type())
+                .setMoveId(request.moveId())
+                .setOrderId(request.orderId())
+                .setPurchaseId(request.purchaseId())
+                .setStructureId(request.structureId());
         inputMapper.updateById(input);
 
-        saveDetails(input.getId(), request.getDetails());
+        saveDetails(input.getId(), request.details());
     }
 
     @Override
-    public InputEntity getDetail(Map<String, Object> request) {
-        Long id = getId(request);
-        InputEntity input = getRequiredInput(id);
+    public InputEntity getDetail(IdRequest request) {
+        InputEntity input = getRequiredInput(request.id());
         input.setDetails(inputDetailMapper.getByBillId(input.getId()));
         return input;
     }
 
     @Override
-    public void audit(InputEntity request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.getId(), "id不能为空");
-        InputEntity input = getRequiredInput(request.getId());
+    @Transactional(rollbackFor = Exception.class)
+    public void audit(IdRequest request) {
+        InputEntity input = getRequiredInput(request.id());
         if (!InputStatus.AUDITING.getValue().equals(input.getStatus())) {
             throw new AppException(CommonError.PARAM_INVALID, "该单据状态无法审核");
         }
         InputEntity update = new InputEntity();
-        update.setId(request.getId());
+        update.setId(request.id());
         update.setStatus(InputStatus.INPUTTING.getValue());
-        initUpdateEntity(update);
         inputMapper.updateById(update);
     }
 
     @Override
-    public void reject(InputEntity request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.getId(), "id不能为空");
-        requireText(request.getRejectReason(), "驳回原因不能为空");
-        InputEntity input = getRequiredInput(request.getId());
+    @Transactional(rollbackFor = Exception.class)
+    public void reject(RejectRequest request) {
+        InputEntity input = getRequiredInput(request.id());
         if (!InputStatus.AUDITING.getValue().equals(input.getStatus())) {
             throw new AppException(CommonError.PARAM_INVALID, "该单据状态无法驳回");
         }
         InputEntity update = new InputEntity();
-        update.setId(request.getId());
+        update.setId(request.id());
         update.setStatus(InputStatus.REJECTED.getValue());
-        update.setRejectReason(request.getRejectReason());
-        initUpdateEntity(update);
+        update.setRejectReason(request.rejectReason());
         inputMapper.updateById(update);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void addFinish(InputFinishRequest request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.id(), "入库明细ID不能为空");
         Long storageId = getStorageId(request);
-        BigDecimal quantity = requirePositiveQuantity(request.quantity(), "本次入库数量必须大于0");
+        BigDecimal quantity = request.quantity();
 
         InputDetailEntity detail = inputDetailMapper.selectById(request.id());
         if (detail == null) {
@@ -160,36 +155,18 @@ public class InputServiceImpl extends BaseService<InputEntity> implements InputS
         }
 
         BigDecimal targetQuantity = requirePositiveQuantity(detail.getQuantity(), "入库明细数量配置不正确");
-        BigDecimal oldFinishQuantity = BigDecimal.valueOf(detail.getFinishQuantity() == null ? 0D : detail.getFinishQuantity());
+        BigDecimal oldFinishQuantity = detail.getFinishQuantity() == null ? BigDecimal.ZERO : detail.getFinishQuantity();
         BigDecimal newFinishQuantity = oldFinishQuantity.add(quantity);
         if (newFinishQuantity.compareTo(targetQuantity) > 0) {
             throw new AppException(CommonError.PARAM_INVALID, "累计入库数量不能超过明细数量");
         }
 
-        detail.setFinishQuantity(newFinishQuantity.doubleValue())
+        detail.setFinishQuantity(newFinishQuantity)
                 .setIsFinished(newFinishQuantity.compareTo(targetQuantity) >= 0);
-        initUpdateBaseEntity(detail);
         inputDetailMapper.updateById(detail);
 
         increaseInventory(detail.getMaterialId(), storageId, quantity);
         finishInputIfAllDetailsFinished(input.getId());
-    }
-
-    private void validateInput(InputEntity input, boolean requireId) {
-        requireNotNull(input, "请求参数不能为空");
-        if (requireId) {
-            requireId(input.getId(), "入库单ID不能为空");
-        }
-        List<InputDetailEntity> details = input.getDetails();
-        requireNotNull(details, "入库明细不能为空");
-        if (details.isEmpty()) {
-            throw new AppException(CommonError.PARAM_MISSING, "入库明细不能为空");
-        }
-        for (InputDetailEntity detail : details) {
-            requireNotNull(detail, "入库明细不能为空");
-            requireId(getMaterialId(detail), "入库物料不能为空");
-            requirePositiveQuantity(detail.getQuantity(), "入库数量必须大于0");
-        }
     }
 
     private void saveDetails(Long billId, List<InputDetailEntity> details) {
@@ -198,9 +175,8 @@ public class InputServiceImpl extends BaseService<InputEntity> implements InputS
             entity.setBillId(billId)
                     .setMaterialId(getMaterialId(detail))
                     .setQuantity(detail.getQuantity())
-                    .setFinishQuantity(0D)
+                    .setFinishQuantity(BigDecimal.ZERO)
                     .setIsFinished(false);
-            initAddBaseEntity(entity);
             inputDetailMapper.insert(entity);
         }
     }
@@ -227,39 +203,27 @@ public class InputServiceImpl extends BaseService<InputEntity> implements InputS
 
     private void increaseInventory(Long materialId, Long storageId, BigDecimal quantity) {
         requireId(materialId, "入库物料不能为空");
-        InventoryEntity inventory = inventoryMapper.selectOne(Wrappers.<InventoryEntity>lambdaQuery()
-                .eq(InventoryEntity::getMaterialId, materialId)
-                .eq(InventoryEntity::getStorageId, storageId)
-                .eq(InventoryEntity::getType, INVENTORY_TYPE_STORAGE)
-                .last("limit 1"));
-        if (inventory == null) {
-            inventory = new InventoryEntity();
-            inventory.setMaterialId(materialId)
-                    .setStorageId(storageId)
-                    .setType(INVENTORY_TYPE_STORAGE)
-                    .setQuantity(quantity.doubleValue());
-            initAddBaseEntity(inventory);
-            inventoryMapper.insert(inventory);
+        long now = System.currentTimeMillis();
+        int updated = inventoryMapper.increaseQuantity(materialId, storageId, INVENTORY_TYPE_STORAGE, quantity, now);
+        if (updated > 0) {
             return;
         }
-        BigDecimal oldQuantity = BigDecimal.valueOf(inventory.getQuantity() == null ? 0D : inventory.getQuantity());
-        inventory.setQuantity(oldQuantity.add(quantity).doubleValue());
-        initUpdateBaseEntity(inventory);
-        inventoryMapper.updateById(inventory);
+        // 记录不存在时新建。要求 (material_id, storage_id, type) 上有唯一索引以防并发重复插入。
+        InventoryEntity inventory = new InventoryEntity();
+        inventory.setMaterialId(materialId)
+                .setStorageId(storageId)
+                .setType(INVENTORY_TYPE_STORAGE)
+                .setQuantity(quantity);
+        inventoryMapper.insert(inventory);
     }
 
     private void finishInputIfAllDetailsFinished(Long inputId) {
-        List<InputDetailEntity> details = inputDetailMapper.selectList(Wrappers.<InputDetailEntity>lambdaQuery()
-                .eq(InputDetailEntity::getBillId, inputId));
-        boolean allFinished = !details.isEmpty()
-                && details.stream().allMatch(detail -> Boolean.TRUE.equals(detail.getIsFinished()));
-        if (!allFinished) {
+        if (inputDetailMapper.countUnfinished(inputId) > 0) {
             return;
         }
         InputEntity update = new InputEntity();
         update.setId(inputId);
         update.setStatus(InputStatus.FINISHED.getValue());
-        initUpdateEntity(update);
         inputMapper.updateById(update);
     }
 
@@ -272,22 +236,6 @@ public class InputServiceImpl extends BaseService<InputEntity> implements InputS
         return input;
     }
 
-    private Long getId(Map<String, Object> request) {
-        requireNotNull(request, "请求参数不能为空");
-        Object value = request.get("id");
-        if (value == null) {
-            throw new AppException(CommonError.PARAM_MISSING, "id不能为空");
-        }
-        if (value instanceof Number number) {
-            return number.longValue();
-        }
-        try {
-            return Long.parseLong(value.toString());
-        } catch (NumberFormatException exception) {
-            throw new AppException(CommonError.PARAM_INVALID, "id格式不正确");
-        }
-    }
-
     private String resolveBillCode(String billCode) {
         String code = trimToNull(billCode);
         if (code != null) {
@@ -298,31 +246,7 @@ public class InputServiceImpl extends BaseService<InputEntity> implements InputS
 
     private String resolveUpdateBillCode(String requestBillCode, String existBillCode) {
         String code = trimToNull(requestBillCode);
-        if (code != null) {
-            return code;
-        }
-        return resolveBillCode(existBillCode);
+        return code != null ? code : existBillCode;
     }
 
-    private BigDecimal requirePositiveQuantity(Double value, String message) {
-        requireNotNull(value, message);
-        BigDecimal quantity = BigDecimal.valueOf(value);
-        if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new AppException(CommonError.PARAM_INVALID, message);
-        }
-        return quantity;
-    }
-
-    private void initAddBaseEntity(BaseEntity entity) {
-        long now = System.currentTimeMillis();
-        entity.setId(null);
-        entity.setCreateTime(now);
-        entity.setUpdateTime(now);
-        entity.setIsDisabled(Boolean.TRUE.equals(entity.getIsDisabled()));
-        entity.setIsPublished(false);
-    }
-
-    private void initUpdateBaseEntity(BaseEntity entity) {
-        entity.setUpdateTime(System.currentTimeMillis());
-    }
 }

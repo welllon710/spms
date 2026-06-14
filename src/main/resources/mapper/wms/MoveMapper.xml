@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spms.wms.mapper.MoveMapper">
+    <resultMap id="moveResultMap" type="com.spms.wms.entity.MoveEntity">
+        <id column="id" property="id"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_disabled" property="isDisabled"/>
+        <result column="is_published" property="isPublished"/>
+        <result column="reject_reason" property="rejectReason"/>
+        <result column="bill_code" property="billCode"/>
+        <result column="status" property="status"/>
+        <result column="storage_id" property="storageId"/>
+
+        <association property="storage" javaType="com.spms.wms.entity.StorageEntity">
+            <id column="storage_join_id" property="id"/>
+            <result column="storage_code" property="code"/>
+            <result column="storage_name" property="name"/>
+            <result column="storage_parent_id" property="parentId"/>
+        </association>
+    </resultMap>
+
+    <sql id="moveColumns">
+        m.id,
+        m.create_time,
+        m.update_time,
+        m.is_disabled,
+        m.is_published,
+        m.reject_reason,
+        m.bill_code,
+        m.status,
+        m.storage_id,
+        st.id as storage_join_id,
+        st.code as storage_code,
+        st.name as storage_name,
+        st.parent_id as storage_parent_id
+    </sql>
+
+    <sql id="moveJoinFrom">
+        from `move` m
+        left join storage st on st.id = m.storage_id
+    </sql>
+
+    <select id="getPageList" resultMap="moveResultMap">
+        select
+        <include refid="moveColumns"/>
+        <include refid="moveJoinFrom"/>
+        <where>
+            <if test="params.billCode != null and params.billCode != ''">
+                and m.bill_code like concat('%', #{params.billCode}, '%')
+            </if>
+            <if test="params.status != null">
+                and m.status = #{params.status}
+            </if>
+            <if test="params.storageId != null">
+                and m.storage_id = #{params.storageId}
+            </if>
+        </where>
+        order by m.id desc
+    </select>
+
+    <select id="getById" resultMap="moveResultMap">
+        select
+        <include refid="moveColumns"/>
+        <include refid="moveJoinFrom"/>
+        where m.id = #{id}
+    </select>
+</mapper>

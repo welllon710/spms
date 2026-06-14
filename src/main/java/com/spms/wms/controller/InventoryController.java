@@ -9,13 +9,15 @@ import com.spms.common.security.Permission;
 import com.spms.wms.entity.InventoryEntity;
 import com.spms.wms.model.InventoryPageFilter;
 import com.spms.wms.service.InventoryService;
-import lombok.AllArgsConstructor;
+import com.spms.base.IdRequest;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Permission
 @Api("inventory")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class InventoryController {
 
     private final InventoryService inventoryService;
@@ -23,5 +25,10 @@ public class InventoryController {
     @PostMapping("getPage")
     public Json<PageResult<InventoryEntity>> getPage(@RequestBody PageQuery<InventoryPageFilter> request) {
         return Json.data(inventoryService.getPage(request));
+    }
+
+    @PostMapping("getDetail")
+    public Json<InventoryEntity> getDetail(@RequestBody @Valid IdRequest request) {
+        return Json.data(inventoryService.getDetail(request.id()));
     }
 }

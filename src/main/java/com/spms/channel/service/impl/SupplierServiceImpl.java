@@ -57,7 +57,6 @@ public class SupplierServiceImpl extends BaseService<SupplierEntity> implements 
     public SupplierEntity add(SupplierEntity supplier) {
         requireNotNull(supplier, "请求参数不能为空");
         requireText(supplier.getName(), "供应商名称不能为空");
-        initAddEntity(supplier);
         checkDuplicate(supplier.getName(), supplier.getCode(), null);
         supplierMapper.insert(supplier);
         return supplier;
@@ -70,7 +69,6 @@ public class SupplierServiceImpl extends BaseService<SupplierEntity> implements 
         SupplierEntity exist = getRequiredSupplier(supplier.getId());
         checkEditable(exist);
         checkDuplicate(supplier.getName(), supplier.getCode(), supplier.getId());
-        initUpdateEntity(supplier);
         if (supplier.getIsDisabled() == null) {
             supplier.setIsDisabled(exist.getIsDisabled());
         }

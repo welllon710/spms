@@ -54,7 +54,6 @@ public class DepartmentServiceImpl extends BaseService<DepartmentEntity> impleme
     @Transactional(rollbackFor = Exception.class)
     public DepartmentEntity add(DepartmentEntity department) {
         validateDepartment(department, false);
-        initAddEntity(department);
         checkParentExists(department.getParentId(), null);
         checkDuplicate(department.getName(), department.getCode(), null);
         departmentMapper.insert(department);
@@ -69,7 +68,6 @@ public class DepartmentServiceImpl extends BaseService<DepartmentEntity> impleme
         checkEditable(exist);
         checkParentExists(department.getParentId(), department.getId());
         checkDuplicate(department.getName(), department.getCode(), department.getId());
-        initUpdateEntity(department);
         if (department.getIsDisabled() == null) {
             department.setIsDisabled(exist.getIsDisabled());
         }

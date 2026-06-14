@@ -1,40 +1,38 @@
 package com.spms.wms.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.spms.asset.entity.DeviceEntity;
 import com.spms.base.BaseService;
+import com.spms.base.IdRequest;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
-import com.spms.common.util.ParamUtils;
 import com.spms.common.util.TreeUtils;
 import com.spms.system.enums.CodeRuleField;
-import com.spms.system.mapper.CodeRuleMapper;
 import com.spms.system.service.CodeRuleService;
+import com.spms.wms.entity.InventoryEntity;
 import com.spms.wms.entity.StorageEntity;
+import com.spms.wms.mapper.InventoryMapper;
 import com.spms.wms.mapper.StorageMapper;
 import com.spms.wms.service.StorageService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 
-import static com.spms.common.util.ParamUtils.requireNotNull;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class StorageServiceImpl extends BaseService<StorageEntity> implements StorageService {
 
     private final StorageMapper storageMapper;
-
+    private final InventoryMapper inventoryMapper;
     private final CodeRuleService codeRuleService;
 
     @Override
     public List<StorageEntity> getList() {
         return TreeUtils.buildTree(
-                storageMapper.selectList(new QueryWrapper<>()),
+                storageMapper.selectList(null),
                 StorageEntity::getId,
                 StorageEntity::getParentId,
                 StorageEntity::setChildren
@@ -43,38 +41,51 @@ public class StorageServiceImpl extends BaseService<StorageEntity> implements St
 
     @Override
     public void add(StorageEntity request) {
-        requireNotNull(request, "请求参数不能为空");
         if (request.getCode() == null) {
             request.setCode(codeRuleService.createCode(CodeRuleField.STORAGE_CODE));
         }
-        initAddEntity(request);
         checkDuplicate(request.getName(), request.getCode(), null);
         storageMapper.insert(request);
     }
 
     @Override
     public void updateById(StorageEntity request) {
-        requireNotNull(request, "请求参数不能为空");
         if (request.getCode() == null) {
             request.setCode(codeRuleService.createCode(CodeRuleField.STORAGE_CODE));
         }
-        initUpdateEntity(request);
-        checkDuplicate(request.getName(), request.getCode(), null);
+        checkDuplicate(request.getName(), request.getCode(), request.getId());
         storageMapper.updateById(request);
     }
 
     @Override
-    public StorageEntity getById(Map<String, String> map) {
-        requireNotNull(map, "请求参数不能为空");
-        ParamUtils.requireText(map.get("id"), "id 不能为空");
-        return storageMapper.selectById(map.get("id"));
+    public StorageEntity getById(IdRequest request) {
+        return storageMapper.selectById(request.id());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delete(IdRequest request) {
+        StorageEntity exist = storageMapper.selectById(request.id());
+        if (exist == null) {
+            throw new AppException(CommonError.DATA_NOT_FOUND, "仓库不存在");
+        }
+        long children = storageMapper.selectCount(
+                Wrappers.<StorageEntity>lambdaQuery().eq(StorageEntity::getParentId, request.id()));
+        if (children > 0) {
+            throw new AppException(CommonError.PARAM_INVALID, "存在子仓库，无法删除");
+        }
+        long inventory = inventoryMapper.selectCount(
+                Wrappers.<InventoryEntity>lambdaQuery().eq(InventoryEntity::getStorageId, request.id()));
+        if (inventory > 0) {
+            throw new AppException(CommonError.PARAM_INVALID, "仓库存在库存记录，无法删除");
+        }
+        storageMapper.deleteById(request.id());
     }
 
     private void checkDuplicate(String name, String code,  Long excludeId) {
         LambdaQueryWrapper<StorageEntity> wrapper = Wrappers.lambdaQuery(StorageEntity.class)
                 .and(query -> query.eq(StorageEntity::getName, name)
                         .or().eq(StorageEntity::getCode, code));
-//                        .or().eq(StorageEntity::getUuid, uuid));
         if (excludeId != null) {
             wrapper.ne(StorageEntity::getId, excludeId);
         }

@@ -33,7 +33,6 @@ public class CodeRuleServiceImpl extends BaseService<CodeRuleEntity> implements 
                 .setCurrentYear(now.getYear())
                 .setCurrentMonth(now.getMonthValue())
                 .setCurrentDay(now.getDayOfMonth());
-        initUpdateEntity(rule);
         codeRuleMapper.updateById(rule);
 
         return buildCode(rule, field, snType, nextSn, now);
@@ -55,7 +54,6 @@ public class CodeRuleServiceImpl extends BaseService<CodeRuleEntity> implements 
                 .setCurrentMonth(0)
                 .setCurrentDay(0)
                 .setIsSystem(true);
-        initAddEntity(entity);
         codeRuleMapper.insert(entity);
         return codeRuleMapper.selectByRuleFieldForUpdate(field.getKey());
     }

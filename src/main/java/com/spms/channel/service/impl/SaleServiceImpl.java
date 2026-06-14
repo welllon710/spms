@@ -3,6 +3,7 @@ package com.spms.channel.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.BaseService;
+import com.spms.base.IdRequest;
 import com.spms.base.PageQuery;
 import com.spms.channel.entity.CustomerEntity;
 import com.spms.channel.entity.SaleDetailEntity;
@@ -10,6 +11,8 @@ import com.spms.channel.entity.SaleEntity;
 import com.spms.channel.enums.SaleStatus;
 import com.spms.channel.mapper.SaleDetailMapper;
 import com.spms.channel.mapper.SaleMapper;
+import com.spms.channel.model.SaleAddRequest;
+import com.spms.channel.model.SaleUpdateRequest;
 import com.spms.channel.model.SalePageFilter;
 import com.spms.channel.service.SaleService;
 import com.spms.common.exception.AppException;
@@ -19,17 +22,17 @@ import com.spms.common.util.QueryParams;
 import com.spms.system.enums.CodeRuleField;
 import com.spms.system.service.CodeRuleService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.spms.base.RejectRequest;
+
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static com.spms.common.util.ParamUtils.requireId;
-import static com.spms.common.util.ParamUtils.requireNotNull;
+import static com.spms.common.util.ParamUtils.requirePositiveQuantity;
 import static com.spms.common.util.ParamUtils.trimToNull;
 
 @Service
@@ -55,10 +58,8 @@ public class SaleServiceImpl extends BaseService<SaleEntity> implements SaleServ
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void add(SalePageFilter request) {
-        requireNotNull(request, "请求参数不能为空");
-        List<SaleDetailEntity> details = getDetails(request);
-        validateDetails(details);
+    public void add(SaleAddRequest request) {
+        List<SaleDetailEntity> details = request.details();
 
         SaleEntity sale = new SaleEntity();
         sale.setReason(request.reason())
@@ -66,7 +67,6 @@ public class SaleServiceImpl extends BaseService<SaleEntity> implements SaleServ
                 .setCustomerId(getCustomerId(request.customerId(), request.customer()))
                 .setStatus(SaleStatus.AUDITING.getValue())
                 .setTotalPrice(calculateTotalPrice(details));
-        initAddEntity(sale);
         saleMapper.insert(sale);
 
         saveDetails(sale.getId(), details);
@@ -74,74 +74,60 @@ public class SaleServiceImpl extends BaseService<SaleEntity> implements SaleServ
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void update(SaleEntity request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.getId(), "id不能为空");
-        List<SaleDetailEntity> details = request.getDetails();
-        validateDetails(details);
+    public void update(SaleUpdateRequest request) {
+        List<SaleDetailEntity> details = request.details();
+        SaleEntity exist = getRequiredSale(request.id());
+        if (!SaleStatus.AUDITING.getValue().equals(exist.getStatus())) {
+            throw new AppException(CommonError.PARAM_INVALID, "当前销售单状态无法修改");
+        }
 
         saleDetailMapper.delete(Wrappers.<SaleDetailEntity>lambdaQuery()
-                .eq(SaleDetailEntity::getBillId, request.getId()));
+                .eq(SaleDetailEntity::getBillId, request.id()));
 
         SaleEntity sale = new SaleEntity();
-        BeanUtils.copyProperties(request, sale);
-        sale.setCustomerId(getCustomerId(request.getCustomerId(), request.getCustomer()))
+        sale.setId(request.id());
+        sale.setBillCode(resolveUpdateBillCode(request.billCode(), exist.getBillCode()))
+                .setReason(request.reason())
+                .setCustomerId(getCustomerId(request.customerId(), request.customer()))
                 .setStatus(SaleStatus.AUDITING.getValue())
                 .setTotalPrice(calculateTotalPrice(details));
-        initUpdateEntity(sale);
         saleMapper.updateById(sale);
 
         saveDetails(sale.getId(), details);
     }
 
     @Override
-    public SaleEntity getDetail(Map<String, Object> request) {
-        Long id = getId(request);
-        SaleEntity sale = saleMapper.getById(id);
-        if (sale == null) {
-            throw new AppException(CommonError.DATA_NOT_FOUND, "销售单不存在");
-        }
+    public SaleEntity getDetail(IdRequest request) {
+        SaleEntity sale = getRequiredSale(request.id());
         sale.setDetails(saleDetailMapper.getSaleDetailList(sale.getId()));
         return sale;
     }
 
     @Override
-    public void audit(SaleEntity request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.getId(), "id不能为空");
-        SaleEntity sale = saleMapper.selectById(request.getId());
-        if (sale == null) {
-            throw new AppException(CommonError.DATA_NOT_FOUND, "销售单不存在");
+    @Transactional(rollbackFor = Exception.class)
+    public void audit(IdRequest request) {
+        SaleEntity sale = getRequiredSale(request.id());
+        if (!SaleStatus.AUDITING.getValue().equals(sale.getStatus())) {
+            throw new AppException(CommonError.PARAM_INVALID, "该单据状态无法审核");
         }
-        Integer status = sale.getStatus();
-        if (!SaleStatus.AUDITING.getValue().equals(status)) {
-            throw new AppException(CommonError.PARAM_MISSING, "该单据状态无法审核");
-        }
-        request.setStatus(SaleStatus.OUT_STORAGE.getValue());
-        saleMapper.updateById(request);
+        SaleEntity update = new SaleEntity();
+        update.setId(request.id());
+        update.setStatus(SaleStatus.OUT_STORAGE.getValue());
+        saleMapper.updateById(update);
     }
 
     @Override
-    public void reject(SaleEntity request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.getId(), "id不能为空");
-        SaleEntity sale = saleMapper.selectById(request.getId());
-        if (sale == null) {
-            throw new AppException(CommonError.DATA_NOT_FOUND, "销售单不存在");
+    @Transactional(rollbackFor = Exception.class)
+    public void reject(RejectRequest request) {
+        SaleEntity sale = getRequiredSale(request.id());
+        if (!SaleStatus.AUDITING.getValue().equals(sale.getStatus())) {
+            throw new AppException(CommonError.PARAM_INVALID, "该单据状态无法驳回");
         }
-        Integer status = sale.getStatus();
-        if (!SaleStatus.AUDITING.getValue().equals(status)) {
-            throw new AppException(CommonError.PARAM_MISSING, "该单据状态无法驳回");
-        }
-        request.setStatus(SaleStatus.REJECTED.getValue());
-        saleMapper.updateById(request);
-    }
-
-    private List<SaleDetailEntity> getDetails(SalePageFilter request) {
-        if (request.details() != null) {
-            return request.details();
-        }
-        return request.detailList();
+        SaleEntity update = new SaleEntity();
+        update.setId(request.id());
+        update.setStatus(SaleStatus.REJECTED.getValue());
+        update.setRejectReason(request.rejectReason());
+        saleMapper.updateById(update);
     }
 
     private Long getCustomerId(Long customerId, CustomerEntity customer) {
@@ -153,32 +139,15 @@ public class SaleServiceImpl extends BaseService<SaleEntity> implements SaleServ
         return id;
     }
 
-    private void validateDetails(List<SaleDetailEntity> details) {
-        requireNotNull(details, "销售明细不能为空");
-        if (details.isEmpty()) {
-            throw new AppException(CommonError.PARAM_MISSING, "销售明细不能为空");
-        }
-        for (SaleDetailEntity detail : details) {
-            requireNotNull(detail, "销售明细不能为空");
-            requireNotNull(detail.getPrice(), "销售单价不能为空");
-            requireNotNull(detail.getQuantity(), "销售数量不能为空");
-            if (detail.getMaterialId() == null && detail.getMaterial() == null) {
-                throw new AppException(CommonError.PARAM_MISSING, "销售物料不能为空");
-            }
-        }
-    }
-
     private void saveDetails(Long billId, List<SaleDetailEntity> details) {
-        ArrayList<SaleDetailEntity> list = new ArrayList<>();
-        details.forEach(detail -> {
+        for (SaleDetailEntity detail : details) {
             SaleDetailEntity entity = new SaleDetailEntity();
             entity.setPrice(detail.getPrice())
                     .setQuantity(detail.getQuantity())
                     .setMaterialId(getMaterialId(detail))
                     .setBillId(billId);
-            list.add(entity);
-        });
-        list.forEach(saleDetailMapper::insert);
+            saleDetailMapper.insert(entity);
+        }
     }
 
     private Long getMaterialId(SaleDetailEntity detail) {
@@ -190,30 +159,25 @@ public class SaleServiceImpl extends BaseService<SaleEntity> implements SaleServ
         return materialId;
     }
 
-    private Long getId(Map<String, Object> request) {
-        requireNotNull(request, "请求参数不能为空");
-        Object value = request.get("id");
-        if (value == null) {
-            throw new AppException(CommonError.PARAM_MISSING, "id不能为空");
-        }
-        if (value instanceof Number number) {
-            return number.longValue();
-        }
-        try {
-            return Long.parseLong(value.toString());
-        } catch (NumberFormatException exception) {
-            throw new AppException(CommonError.PARAM_INVALID, "id格式不正确");
-        }
-    }
 
-    private Double calculateTotalPrice(List<SaleDetailEntity> details) {
+    private BigDecimal calculateTotalPrice(List<SaleDetailEntity> details) {
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (SaleDetailEntity detail : details) {
-            BigDecimal price = BigDecimal.valueOf(detail.getPrice());
-            BigDecimal quantity = BigDecimal.valueOf(detail.getQuantity());
-            totalPrice = totalPrice.add(price.multiply(quantity));
+            if (detail.getPrice() == null || detail.getQuantity() == null) {
+                throw new AppException(CommonError.PARAM_MISSING, "明细单价和数量不能为空");
+            }
+            totalPrice = totalPrice.add(detail.getPrice().multiply(detail.getQuantity()));
         }
-        return totalPrice.doubleValue();
+        return totalPrice;
+    }
+
+    private SaleEntity getRequiredSale(Long id) {
+        requireId(id, "销售单ID不能为空");
+        SaleEntity sale = saleMapper.getById(id);
+        if (sale == null) {
+            throw new AppException(CommonError.DATA_NOT_FOUND, "销售单不存在");
+        }
+        return sale;
     }
 
     private String resolveBillCode(String billCode) {
@@ -222,5 +186,10 @@ public class SaleServiceImpl extends BaseService<SaleEntity> implements SaleServ
             return code;
         }
         return codeRuleService.createCode(CodeRuleField.SALE_BILL_CODE);
+    }
+
+    private String resolveUpdateBillCode(String requestBillCode, String existBillCode) {
+        String code = trimToNull(requestBillCode);
+        return code != null ? code : existBillCode;
     }
 }

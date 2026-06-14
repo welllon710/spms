@@ -2,8 +2,8 @@ package com.spms.wms.service;
 
 import com.spms.wms.entity.StorageEntity;
 
+import com.spms.base.IdRequest;
 import java.util.List;
-import java.util.Map;
 
 public interface StorageService {
     List<StorageEntity> getList();
@@ -12,5 +12,7 @@ public interface StorageService {
 
     void updateById(StorageEntity storageEntity);
 
-    StorageEntity getById(Map<String, String> map);
+    StorageEntity getById(IdRequest request);
+
+    void delete(IdRequest request);
 }

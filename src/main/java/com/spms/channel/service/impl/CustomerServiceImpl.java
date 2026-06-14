@@ -54,7 +54,6 @@ public class CustomerServiceImpl extends BaseService<CustomerEntity> implements 
     @Transactional(rollbackFor = Exception.class)
     public CustomerEntity add(CustomerEntity customer) {
         validateCustomer(customer, false);
-        initAddEntity(customer);
         checkDuplicate(customer.getName(), customer.getCode(), null);
         customerMapper.insert(customer);
         return customer;
@@ -67,7 +66,6 @@ public class CustomerServiceImpl extends BaseService<CustomerEntity> implements 
         CustomerEntity exist = getRequiredCustomer(customer.getId());
         checkEditable(exist);
         checkDuplicate(customer.getName(), customer.getCode(), customer.getId());
-        initUpdateEntity(customer);
         if (customer.getIsDisabled() == null) {
             customer.setIsDisabled(exist.getIsDisabled());
         }

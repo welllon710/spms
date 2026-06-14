@@ -57,7 +57,6 @@ public class PermissionServiceImpl extends BaseService<PermissionEntity> impleme
     @Transactional(rollbackFor = Exception.class)
     public PermissionEntity add(PermissionEntity permission) {
         validatePermission(permission, false);
-        initAddEntity(permission);
         permission.setIsSystem(Boolean.TRUE.equals(permission.getIsSystem()));
         checkParentExists(permission.getParentId(), null);
         checkDuplicate(permission.getIdentity(), permission.getName(), null);
@@ -73,7 +72,6 @@ public class PermissionServiceImpl extends BaseService<PermissionEntity> impleme
         checkEditable(exist);
         checkParentExists(permission.getParentId(), permission.getId());
         checkDuplicate(permission.getIdentity(), permission.getName(), permission.getId());
-        initUpdateEntity(permission);
         if (permission.getIsDisabled() == null) {
             permission.setIsDisabled(exist.getIsDisabled());
         }

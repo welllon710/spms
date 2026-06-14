@@ -15,6 +15,14 @@
 - `wms/entity`：`move`、`move_detail` 仍以实体骨架为主。
 - `system/coderule`：编码规则实体和轻量编码服务。
 
+未完成
+1. MoveServiceImpl 流水留痕 — 移库完成后自动生成已完成状态的移库入库单 + 移库出库单
+2. InventoryService 子仓库聚合查询 — 查询仓库库存时包含全部子仓库
+3. 采购入库联动 — 采购入库完成后回写 purchase_detail.finishQuantity 和采购单状态
+4. 销售出库联动 — 销售出库完成后回写 sale_detail.finishQuantity 和销售单状态
+5. 销售审核后自动创建销售出库单
+
+
 后续实现仍按当前项目约定：新增业务模块优先使用 MyBatis-Plus，分页使用 `PageQuery<T>`、`Page<T>` / `IPage<T>` 和 `PageResult<T>`。`PageQuery<T>` 需要兼容顶层 `pageNum/pageSize` 和嵌套 `page.pageNum/pageSize` 两种前端入参。
 
 ## 模块边界

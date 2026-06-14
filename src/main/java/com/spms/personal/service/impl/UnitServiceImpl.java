@@ -1,5 +1,6 @@
 package com.spms.personal.service.impl;
 
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.BaseService;
 import com.spms.base.PageQuery;
@@ -11,7 +12,11 @@ import com.spms.common.util.QueryParams;
 import com.spms.personal.entity.UnitEntity;
 import com.spms.personal.mapper.UnitMapper;
 import com.spms.personal.model.UnitPageFilter;
+import com.spms.asset.entity.MaterialEntity;
+import com.spms.asset.mapper.MaterialMapper;
 import com.spms.personal.service.UnitService;
+import com.spms.system.enums.CodeRuleField;
+import com.spms.system.service.CodeRuleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +34,8 @@ public class UnitServiceImpl extends BaseService<UnitEntity> implements UnitServ
     private static final SortParam DEFAULT_SORT = new SortParam("id", "desc");
 
     private final UnitMapper unitMapper;
+    private final MaterialMapper materialMapper;
+    private final CodeRuleService codeRuleService;
 
     @Override
     public PageResult<UnitEntity> getPage(PageQuery<UnitPageFilter> request) {
@@ -51,7 +58,6 @@ public class UnitServiceImpl extends BaseService<UnitEntity> implements UnitServ
     @Transactional(rollbackFor = Exception.class)
     public UnitEntity add(UnitEntity unit) {
         validateUnit(unit, false);
-        initAddEntity(unit);
         checkDuplicate(unit.getName(), unit.getCode(), null);
         unitMapper.insert(unit);
         return unit;
@@ -64,7 +70,6 @@ public class UnitServiceImpl extends BaseService<UnitEntity> implements UnitServ
         UnitEntity exist = getRequiredUnit(unit.getId());
         checkEditable(exist);
         checkDuplicate(unit.getName(), unit.getCode(), unit.getId());
-        initUpdateEntity(unit);
         if (unit.getIsDisabled() == null) {
             unit.setIsDisabled(exist.getIsDisabled());
         }
@@ -77,6 +82,12 @@ public class UnitServiceImpl extends BaseService<UnitEntity> implements UnitServ
     public void delete(Long id) {
         UnitEntity exist = getRequiredUnit(id);
         checkEditable(exist);
+        long count = materialMapper.selectCount(
+                Wrappers.<MaterialEntity>lambdaQuery()
+                        .eq(MaterialEntity::getUnitId, id));
+        if (count > 0) {
+            throw new AppException(CommonError.PARAM_INVALID, "单位已被物料引用，无法删除");
+        }
         unitMapper.deleteById(id);
     }
 
@@ -97,7 +108,9 @@ public class UnitServiceImpl extends BaseService<UnitEntity> implements UnitServ
         unit.setName(trimToNull(unit.getName()));
         unit.setCode(trimToNull(unit.getCode()));
         requireText(unit.getName(), "单位名称不能为空");
-        requireText(unit.getCode(), "单位编码不能为空");
+        if (unit.getCode() == null) {
+            unit.setCode(codeRuleService.createCode(CodeRuleField.UNIT_CODE));
+        }
     }
 
     private void checkDuplicate(String name, String code, Long excludeId) {

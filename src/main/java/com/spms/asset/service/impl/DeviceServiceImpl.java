@@ -72,7 +72,6 @@ public class DeviceServiceImpl extends BaseService<DeviceEntity> implements Devi
     @Transactional(rollbackFor = Exception.class)
     public DeviceEntity add(DeviceEntity device) {
         validateDevice(device, false);
-        initAddEntity(device);
         applyAddDefaults(device);
         checkDuplicate(device.getName(), device.getCode(), device.getUuid(), null);
         deviceMapper.insert(device);
@@ -88,7 +87,6 @@ public class DeviceServiceImpl extends BaseService<DeviceEntity> implements Devi
         checkEditable(exist);
         applyUpdateDefaults(device, exist);
         checkDuplicate(device.getName(), device.getCode(), device.getUuid(), device.getId());
-        initUpdateEntity(device);
         deviceMapper.updateById(device);
         if (device.getParameters() != null) {
             deleteParameterRelations(device.getId());

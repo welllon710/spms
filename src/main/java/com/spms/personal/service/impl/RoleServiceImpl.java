@@ -60,7 +60,6 @@ public class RoleServiceImpl extends BaseService<RoleEntity> implements RoleServ
     @Transactional(rollbackFor = Exception.class)
     public RoleEntity add(RoleEntity role) {
         validateRole(role, false);
-        initAddEntity(role);
         if (!StringUtils.hasText(role.getCode())) {
             role.setCode(generateRoleCode());
         }
@@ -76,7 +75,6 @@ public class RoleServiceImpl extends BaseService<RoleEntity> implements RoleServ
         RoleEntity exist = getRequiredRole(role.getId());
         checkEditable(exist);
         checkDuplicate(role.getName(), role.getCode(), role.getId());
-        initUpdateEntity(role);
         if (role.getIsDisabled() == null) {
             role.setIsDisabled(exist.getIsDisabled());
         }
@@ -132,7 +130,6 @@ public class RoleServiceImpl extends BaseService<RoleEntity> implements RoleServ
         role.setName(trimToNull(role.getName()));
         role.setCode(trimToNull(role.getCode()));
         requireText(role.getName(), "角色名称不能为空");
-//        requireText(role.getCode(), "角色编码不能为空");
     }
 
     private void checkDuplicate(String name, String code, Long excludeId) {

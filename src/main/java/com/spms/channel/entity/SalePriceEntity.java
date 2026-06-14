@@ -8,6 +8,8 @@ import com.spms.base.BaseEntity;
 import lombok.*;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,7 +21,7 @@ import lombok.experimental.Accessors;
 public class SalePriceEntity extends BaseEntity {
     private Long customerId;
     private Long materialId;
-    private Double price;
+    private BigDecimal price;
 
     @TableField(exist = false)
     private CustomerEntity customer;

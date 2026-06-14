@@ -2,21 +2,23 @@ package com.spms.channel.service;
 
 import com.spms.base.PageQuery;
 import com.spms.channel.entity.SaleEntity;
+import com.spms.base.IdRequest;
+import com.spms.base.RejectRequest;
+import com.spms.channel.model.SaleAddRequest;
 import com.spms.channel.model.SalePageFilter;
+import com.spms.channel.model.SaleUpdateRequest;
 import com.spms.common.result.PageResult;
-
-import java.util.Map;
 
 public interface SaleService {
     PageResult<SaleEntity> getPage(PageQuery<SalePageFilter> request);
 
-    void add(SalePageFilter request);
+    void add(SaleAddRequest request);
 
-    void update(SaleEntity request);
+    void update(SaleUpdateRequest request);
 
-    SaleEntity getDetail(Map<String, Object> request);
+    SaleEntity getDetail(IdRequest request);
 
-    void audit(SaleEntity request);
+    void audit(IdRequest request);
 
-    void reject(SaleEntity request);
+    void reject(RejectRequest request);
 }

@@ -10,6 +10,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
+
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Accessors(chain = true)
@@ -22,8 +24,8 @@ public class MaterialEntity extends BaseEntity {
     private Long materialType;
     private Long useType;
     private Long unitId;
-    private Double purchasePrice;
-    private Double salePrice;
+    private BigDecimal purchasePrice;
+    private BigDecimal salePrice;
 
     @TableField(exist = false)
     private UnitEntity unit;

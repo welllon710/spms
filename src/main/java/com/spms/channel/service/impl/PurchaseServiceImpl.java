@@ -1,7 +1,6 @@
 package com.spms.channel.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.BaseService;
@@ -12,7 +11,12 @@ import com.spms.channel.enums.PurchaseStatus;
 import com.spms.channel.mapper.PurchaseDetailMapper;
 import com.spms.channel.mapper.PurchaseMapper;
 import com.spms.channel.mapper.PurchasePriceMapper;
+import com.spms.base.IdRequest;
+import com.spms.base.RejectRequest;
+import com.spms.channel.model.PurchaseAddRequest;
+import com.spms.channel.model.PurchaseFinishRequest;
 import com.spms.channel.model.PurchasePageFilter;
+import com.spms.channel.model.PurchaseUpdateRequest;
 import com.spms.channel.service.PurchaseService;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
@@ -20,22 +24,20 @@ import com.spms.common.result.PageResult;
 import com.spms.common.util.QueryParams;
 import com.spms.system.enums.CodeRuleField;
 import com.spms.system.service.CodeRuleService;
-import lombok.AllArgsConstructor;
-import org.springframework.beans.BeanUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static com.spms.common.util.ParamUtils.requireId;
-import static com.spms.common.util.ParamUtils.requireNotNull;
+import static com.spms.common.util.ParamUtils.requirePositiveQuantity;
 import static com.spms.common.util.ParamUtils.trimToNull;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class PurchaseServiceImpl extends BaseService<PurchaseEntity> implements PurchaseService {
 
     private final PurchaseMapper purchaseMapper;
@@ -59,152 +61,135 @@ public class PurchaseServiceImpl extends BaseService<PurchaseEntity> implements 
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void update(PurchaseEntity request) {
-        requireNotNull(request, "请求参数不能为空");
-        List<PurchaseDetailEntity> details = request.getDetails();
-        requireNotNull(details, "采购明细不能为空");
-        if (details.isEmpty()) {
-            throw new AppException(CommonError.PARAM_MISSING, "采购明细不能为空");
+    public void update(PurchaseUpdateRequest request) {
+        List<PurchaseDetailEntity> details = request.details();
+        PurchaseEntity exist = getRequiredPurchase(request.id());
+        if (!PurchaseStatus.AUDITING.getValue().equals(exist.getStatus())) {
+            throw new AppException(CommonError.PARAM_INVALID, "当前采购单状态无法修改");
         }
-        purchaseDetailMapper.delete(Wrappers.<PurchaseDetailEntity>lambdaQuery().eq(PurchaseDetailEntity::getBillId, request.getId()));
+        purchaseDetailMapper.delete(Wrappers.<PurchaseDetailEntity>lambdaQuery().eq(PurchaseDetailEntity::getBillId, request.id()));
 
-        Double totalPrice = calculateTotalPrice(details);
+        BigDecimal totalPrice = calculateTotalPrice(details);
 
         PurchaseEntity purchaseEntity = new PurchaseEntity();
-        BeanUtils.copyProperties(request, purchaseEntity);
-        purchaseEntity.setReason(request.getReason())
-                .setBillCode(request.getBillCode())
-                .setTotalPrice(totalPrice);
-        initUpdateEntity(purchaseEntity);
-
-        purchaseEntity.setStatus(PurchaseStatus.AUDITING.getValue());
+        purchaseEntity.setId(request.id());
+        purchaseEntity.setReason(request.reason())
+                .setBillCode(resolveUpdateBillCode(request.billCode(), exist.getBillCode()))
+                .setTotalPrice(totalPrice)
+                .setStatus(PurchaseStatus.AUDITING.getValue());
         purchaseMapper.updateById(purchaseEntity);
 
-        ArrayList<PurchaseDetailEntity> list = new ArrayList<>();
-        purchaseEntity.getDetails().forEach(detail -> {
-            PurchaseDetailEntity entity = new PurchaseDetailEntity();
-            entity.setPrice(detail.getPrice())
-                    .setQuantity(detail.getQuantity())
-                    .setMaterialId(detail.getMaterial().getId())
-                    .setSupplierId(detail.getSupplier().getId())
-                    .setBillId(purchaseEntity.getId());
-            list.add(entity);
-        });
-
-        list.forEach(purchaseDetailMapper::insert);
+        saveDetails(purchaseEntity.getId(), details);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addFinish(Map<String, Long> request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.get("id"), "采购单id不能为空");
-        requireId(request.get("billId"), "采购单号不能为空");
-        requireId(request.get("quantity"), "采购数量不能为空");
-        PurchaseDetailEntity entity = purchaseDetailMapper.selectById(request.get("id"));
+    public void addFinish(PurchaseFinishRequest request) {
+        BigDecimal quantity = request.quantity();
 
-        BigDecimal quantity = BigDecimal.valueOf(request.get("quantity"));
-        BigDecimal finishQuantity = BigDecimal.valueOf(entity.getFinishQuantity());
-        BigDecimal multiply = quantity.add(finishQuantity);
-
-        LambdaUpdateWrapper<PurchaseDetailEntity> wrapper =
-                Wrappers.lambdaUpdate(PurchaseDetailEntity.class)
-                        .eq(PurchaseDetailEntity::getId, request.get("id"))
-                        .eq(PurchaseDetailEntity::getBillId, request.get("billId"))
-                        .set(PurchaseDetailEntity::getFinishQuantity, multiply.doubleValue());
-        purchaseDetailMapper.update(null, wrapper);
-
-        List<PurchaseDetailEntity> billEntity = purchaseDetailMapper.selectList(Wrappers.<PurchaseDetailEntity>lambdaQuery()
-                .eq(PurchaseDetailEntity::getBillId, request.get("billId")));
-
-        if (billEntity.stream().allMatch(detail -> detail.getQuantity().equals(detail.getFinishQuantity()))) {
-            LambdaUpdateWrapper<PurchaseEntity> wrapperEntity = Wrappers.lambdaUpdate(PurchaseEntity.class)
-                    .eq(PurchaseEntity::getId, request.get("billId"))
-                    .set(PurchaseEntity::getStatus, PurchaseStatus.IN_STORAGE.getValue());
-            purchaseMapper.update(null, wrapperEntity);
-            billEntity.forEach(detail -> {
-                detail.setIsFinished(true);
-            });
-            purchaseDetailMapper.updateById(billEntity);
+        PurchaseDetailEntity detail = purchaseDetailMapper.selectById(request.id());
+        if (detail == null) {
+            throw new AppException(CommonError.DATA_NOT_FOUND, "采购明细不存在");
+        }
+        if (!detail.getBillId().equals(request.billId())) {
+            throw new AppException(CommonError.PARAM_INVALID, "采购明细与采购单不匹配");
         }
 
+        BigDecimal targetQuantity = requirePositiveQuantity(detail.getQuantity(), "采购明细数量配置不正确");
+        BigDecimal oldFinishQuantity = detail.getFinishQuantity() == null ? BigDecimal.ZERO : detail.getFinishQuantity();
+        BigDecimal newFinishQuantity = oldFinishQuantity.add(quantity);
+        if (newFinishQuantity.compareTo(targetQuantity) > 0) {
+            throw new AppException(CommonError.PARAM_INVALID, "累计采购数量不能超过明细数量");
+        }
+
+        detail.setFinishQuantity(newFinishQuantity)
+                .setIsFinished(newFinishQuantity.compareTo(targetQuantity) >= 0);
+        purchaseDetailMapper.updateById(detail);
+
+        finishPurchaseIfAllDetailsFinished(request.billId());
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void add(PurchasePageFilter request) {
-        requireNotNull(request, "请求参数不能为空");
+    public void add(PurchaseAddRequest request) {
         List<PurchaseDetailEntity> details = request.details();
-        requireNotNull(details, "采购明细不能为空");
-        if (details.isEmpty()) {
-            throw new AppException(CommonError.PARAM_MISSING, "采购明细不能为空");
-        }
-        Double totalPrice = calculateTotalPrice(details);
+        BigDecimal totalPrice = calculateTotalPrice(details);
 
-        //新增采购单
         PurchaseEntity purchaseEntity = new PurchaseEntity();
         purchaseEntity.setReason(request.reason())
                 .setBillCode(resolveBillCode(request.billCode()))
                 .setTotalPrice(totalPrice)
                 .setStatus(PurchaseStatus.AUDITING.getValue());
-        initAddEntity(purchaseEntity);
         purchaseMapper.insert(purchaseEntity);
-        Long billId = purchaseEntity.getId();
 
-        ArrayList<PurchaseDetailEntity> list = new ArrayList<>();
-        details.forEach(detail -> {
+        saveDetails(purchaseEntity.getId(), details);
+    }
+
+    private void saveDetails(Long billId, List<PurchaseDetailEntity> details) {
+        for (PurchaseDetailEntity detail : details) {
             PurchaseDetailEntity entity = new PurchaseDetailEntity();
             entity.setPrice(detail.getPrice())
                     .setQuantity(detail.getQuantity())
-                    .setMaterialId(detail.getMaterial().getId())
-                    .setSupplierId(detail.getSupplier().getId())
+                    .setMaterialId(getMaterialId(detail))
+                    .setSupplierId(getSupplierId(detail))
                     .setBillId(billId);
-            list.add(entity);
-        });
-        list.forEach(purchaseDetailMapper::insert);
+            purchaseDetailMapper.insert(entity);
+        }
+    }
+
+    @Override
+    public PurchaseEntity getDetail(IdRequest request) {
+        PurchaseEntity purchase = getRequiredPurchase(request.id());
+        purchase.setDetails(purchaseDetailMapper.getPurchaseDetailList(purchase.getId()));
+        return purchase;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public PurchaseEntity getDetail(Map<String, Object> request) {
-        String id = (String) request.get("id");
-        if (id == null) {
-            throw new AppException(CommonError.PARAM_MISSING, "id不能为空");
+    public void audit(IdRequest request) {
+        PurchaseEntity exist = getRequiredPurchase(request.id());
+        if (!PurchaseStatus.AUDITING.getValue().equals(exist.getStatus())) {
+            throw new AppException(CommonError.PARAM_INVALID, "该单据状态无法审核");
         }
-        PurchaseEntity purchaseEntity = purchaseMapper.selectById(id);
-        List<PurchaseDetailEntity> purchaseDetailList = purchaseDetailMapper.getPurchaseDetailList(purchaseEntity.getId());
-        purchaseEntity.setDetails(purchaseDetailList);
-        return purchaseEntity;
+        PurchaseEntity update = new PurchaseEntity();
+        update.setId(request.id());
+        update.setStatus(PurchaseStatus.PURCHASING.getValue());
+        purchaseMapper.updateById(update);
     }
 
     @Override
-    public void audit(PurchaseEntity request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.getId(), "id不能为空");
-        PurchaseEntity purchaseEntity = purchaseMapper.selectById(request.getId());
-        Integer status = purchaseEntity.getStatus();
-        Integer value = PurchaseStatus.AUDITING.getValue();
-        if (!status.equals(value)) {
-            throw new AppException(CommonError.PARAM_MISSING, "该单据状态无法审核");
+    @Transactional(rollbackFor = Exception.class)
+    public void reject(RejectRequest request) {
+        PurchaseEntity exist = getRequiredPurchase(request.id());
+        if (!PurchaseStatus.AUDITING.getValue().equals(exist.getStatus())) {
+            throw new AppException(CommonError.PARAM_INVALID, "该单据状态无法驳回");
         }
-        request.setStatus(PurchaseStatus.PURCHASING.getValue());
-        purchaseMapper.updateById(request);
+        PurchaseEntity update = new PurchaseEntity();
+        update.setId(request.id());
+        update.setStatus(PurchaseStatus.REJECTED.getValue());
+        update.setRejectReason(request.rejectReason());
+        purchaseMapper.updateById(update);
     }
 
-    @Override
-    public void reject(PurchaseEntity request) {
-        requireNotNull(request, "请求参数不能为空");
-        requireId(request.getId(), "id不能为空");
-        PurchaseEntity purchaseEntity = purchaseMapper.selectById(request.getId());
-        Integer status = purchaseEntity.getStatus();
-        Integer value = PurchaseStatus.AUDITING.getValue();
-        if (!status.equals(value)) {
-            throw new AppException(CommonError.PARAM_MISSING, "该单据状态无法驳回");
+
+    private PurchaseEntity getRequiredPurchase(Long id) {
+        requireId(id, "采购单ID不能为空");
+        PurchaseEntity purchase = purchaseMapper.selectById(id);
+        if (purchase == null) {
+            throw new AppException(CommonError.DATA_NOT_FOUND, "采购单不存在");
         }
-        request.setStatus(PurchaseStatus.REJECTED.getValue());
-        purchaseMapper.updateById(request);
+        return purchase;
     }
 
+    private void finishPurchaseIfAllDetailsFinished(Long billId) {
+        if (purchaseDetailMapper.countUnfinished(billId) > 0) {
+            return;
+        }
+        PurchaseEntity update = new PurchaseEntity();
+        update.setId(billId);
+        update.setStatus(PurchaseStatus.IN_STORAGE.getValue());
+        purchaseMapper.updateById(update);
+    }
 
     private LambdaQueryWrapper<PurchaseEntity> buildPageWrapper(Map<String, Object> params) {
         String billCode = (String) params.get("billCode");
@@ -215,17 +200,15 @@ public class PurchaseServiceImpl extends BaseService<PurchaseEntity> implements 
                 .orderByDesc(PurchaseEntity::getId);
     }
 
-    private Double calculateTotalPrice(List<PurchaseDetailEntity> details) {
+    private BigDecimal calculateTotalPrice(List<PurchaseDetailEntity> details) {
         BigDecimal totalPrice = BigDecimal.ZERO;
         for (PurchaseDetailEntity detail : details) {
-            requireNotNull(detail, "采购明细不能为空");
-            requireNotNull(detail.getPrice(), "采购单价不能为空");
-            requireNotNull(detail.getQuantity(), "采购数量不能为空");
-            BigDecimal price = BigDecimal.valueOf(detail.getPrice());
-            BigDecimal quantity = BigDecimal.valueOf(detail.getQuantity());
-            totalPrice = totalPrice.add(price.multiply(quantity));
+            if (detail.getPrice() == null || detail.getQuantity() == null) {
+                throw new AppException(CommonError.PARAM_MISSING, "明细单价和数量不能为空");
+            }
+            totalPrice = totalPrice.add(detail.getPrice().multiply(detail.getQuantity()));
         }
-        return totalPrice.doubleValue();
+        return totalPrice;
     }
 
     private String resolveBillCode(String billCode) {
@@ -234,5 +217,30 @@ public class PurchaseServiceImpl extends BaseService<PurchaseEntity> implements 
             return code;
         }
         return codeRuleService.createCode(CodeRuleField.PURCHASE_BILL_CODE);
+    }
+
+    private String resolveUpdateBillCode(String requestBillCode, String existBillCode) {
+        String code = trimToNull(requestBillCode);
+        return code != null ? code : existBillCode;
+    }
+
+    private Long getMaterialId(PurchaseDetailEntity detail) {
+        if (detail.getMaterialId() != null) {
+            return detail.getMaterialId();
+        }
+        if (detail.getMaterial() != null) {
+            return detail.getMaterial().getId();
+        }
+        return null;
+    }
+
+    private Long getSupplierId(PurchaseDetailEntity detail) {
+        if (detail.getSupplierId() != null) {
+            return detail.getSupplierId();
+        }
+        if (detail.getSupplier() != null) {
+            return detail.getSupplier().getId();
+        }
+        return null;
     }
 }

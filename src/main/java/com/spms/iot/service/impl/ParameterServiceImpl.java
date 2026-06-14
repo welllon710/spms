@@ -57,7 +57,6 @@ public class ParameterServiceImpl extends BaseService<ParameterEntity> implement
     @Transactional(rollbackFor = Exception.class)
     public ParameterEntity add(ParameterEntity parameter) {
         validateParameter(parameter, false);
-        initAddEntity(parameter);
         parameter.setIsSystem(Boolean.TRUE.equals(parameter.getIsSystem()));
         checkDuplicate(parameter.getCode(), parameter.getLabel(), null);
         parameterMapper.insert(parameter);
@@ -71,7 +70,6 @@ public class ParameterServiceImpl extends BaseService<ParameterEntity> implement
         ParameterEntity exist = getRequiredParameter(parameter.getId());
         checkEditable(exist);
         checkDuplicate(parameter.getCode(), parameter.getLabel(), parameter.getId());
-        initUpdateEntity(parameter);
         if (parameter.getIsDisabled() == null) {
             parameter.setIsDisabled(exist.getIsDisabled());
         }

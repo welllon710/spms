@@ -16,7 +16,7 @@ import lombok.experimental.Accessors;
 @TableName("inventory")
 public class InventoryEntity extends BaseEntity {
     private Long materialId;
-    private Double quantity;
+    private java.math.BigDecimal quantity;
     private Integer type;
     private Long storageId;
     private Long structureId;

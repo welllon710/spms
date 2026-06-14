@@ -3,31 +3,31 @@ package com.spms.wms.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.BaseService;
 import com.spms.base.PageQuery;
+import com.spms.common.exception.AppException;
+import com.spms.common.exception.CommonError;
 import com.spms.common.result.PageResult;
 import com.spms.common.util.QueryParams;
 import com.spms.wms.entity.InventoryEntity;
 import com.spms.wms.mapper.InventoryMapper;
 import com.spms.wms.model.InventoryPageFilter;
 import com.spms.wms.service.InventoryService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
-import static com.spms.common.util.ParamUtils.requireNotNull;
+import static com.spms.common.util.ParamUtils.requireId;
 
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class InventoryServiceImpl extends BaseService<InventoryEntity> implements InventoryService {
 
     private final InventoryMapper inventoryMapper;
 
     @Override
     public PageResult<InventoryEntity> getPage(PageQuery<InventoryPageFilter> request) {
-        requireNotNull(request, "请求参数不能为空");
-
-        InventoryPageFilter filter = request.filter();
+        InventoryPageFilter filter = request == null ? null : request.filter();
         Map<String, Object> params = QueryParams.of(filter)
                 .putTrim("type", InventoryPageFilter::type)
                 .put("storageId", this::getStorageId)
@@ -37,7 +37,18 @@ public class InventoryServiceImpl extends BaseService<InventoryEntity> implement
         return PageResult.from(inventoryMapper.getPageList(page, params), null);
     }
 
+    @Override
+    public InventoryEntity getDetail(Long id) {
+        requireId(id, "库存ID不能为空");
+        InventoryEntity inventory = inventoryMapper.selectById(id);
+        if (inventory == null) {
+            throw new AppException(CommonError.DATA_NOT_FOUND, "库存不存在");
+        }
+        return inventory;
+    }
+
     private Long getStorageId(InventoryPageFilter filter) {
+        if (filter == null) return null;
         if (filter.storageId() != null) {
             return filter.storageId();
         }

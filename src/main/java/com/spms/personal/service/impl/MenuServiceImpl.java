@@ -55,7 +55,6 @@ public class MenuServiceImpl extends BaseService<MenuEntity> implements MenuServ
     @Transactional(rollbackFor = Exception.class)
     public MenuEntity add(MenuEntity menu) {
         validateMenu(menu, false);
-        initAddEntity(menu);
         checkParentExists(menu.getParentId(), null);
         checkDuplicate(menu.getName(), null);
         menuMapper.insert(menu);
@@ -70,7 +69,6 @@ public class MenuServiceImpl extends BaseService<MenuEntity> implements MenuServ
         checkEditable(exist);
         checkParentExists(menu.getParentId(), menu.getId());
         checkDuplicate(menu.getName(), menu.getId());
-        initUpdateEntity(menu);
         if (menu.getIsDisabled() == null) {
             menu.setIsDisabled(exist.getIsDisabled());
         }

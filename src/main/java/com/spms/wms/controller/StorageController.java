@@ -2,20 +2,21 @@ package com.spms.wms.controller;
 
 
 import com.spms.base.Api;
+import com.spms.base.IdRequest;
 import com.spms.common.result.Json;
 import com.spms.common.security.Permission;
 import com.spms.wms.entity.StorageEntity;
 import com.spms.wms.service.StorageService;
-import lombok.AllArgsConstructor;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
-import java.util.Map;
 
 @Api("storage")
 @Permission
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class StorageController {
 
     private final StorageService storageService;
@@ -38,8 +39,14 @@ public class StorageController {
     }
 
     @PostMapping("getDetail")
-    public Json<StorageEntity> getDetail(@RequestBody Map<String, String> map) {
-        return Json.data(storageService.getById(map));
+    public Json<StorageEntity> getDetail(@RequestBody @Valid IdRequest request) {
+        return Json.data(storageService.getById(request));
+    }
+
+    @PostMapping("delete")
+    public Json<String> delete(@RequestBody @Valid IdRequest request) {
+        storageService.delete(request);
+        return Json.success("删除成功");
     }
 
 }

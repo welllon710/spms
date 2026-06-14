@@ -1,6 +1,8 @@
 package com.spms.wms.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.spms.base.BaseEntity;
@@ -31,6 +33,8 @@ public class OutputEntity extends BaseEntity {
     @TableField(exist = false)
     private MoveEntity move;
 
+    @Valid
+    @NotEmpty(message = "出库明细不能为空")
     @TableField(exist = false)
     private List<OutputDetailEntity> details;
 }

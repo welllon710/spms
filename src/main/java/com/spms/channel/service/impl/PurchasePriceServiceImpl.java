@@ -34,7 +34,6 @@ public class PurchasePriceServiceImpl extends BaseService<PurchasePriceEntity> i
         requireNotNull(purchasePriceEntity.getPrice(), "采购物料不能为空");
         requireNotNull(purchasePriceEntity.getMaterial(), "采购物料不能为空");
         requireNotNull(purchasePriceEntity.getSupplier(), "供应商不能为空");
-        initAddEntity(purchasePriceEntity);
         purchasePriceEntity.setMaterialId(purchasePriceEntity.getMaterial().getId());
         purchasePriceEntity.setSupplierId(purchasePriceEntity.getSupplier().getId());
         purchasePriceMapper.insert(purchasePriceEntity);
@@ -68,7 +67,6 @@ public class PurchasePriceServiceImpl extends BaseService<PurchasePriceEntity> i
         requireNotNull(purchasePriceEntity.getPrice(), "采购物料不能为空");
         requireNotNull(purchasePriceEntity.getMaterial(), "采购物料不能为空");
         requireNotNull(purchasePriceEntity.getSupplier(), "供应商不能为空");
-        initUpdateEntity(purchasePriceEntity);
         PurchasePriceEntity entity = PurchasePriceEntity.builder()
                 .materialId(purchasePriceEntity.getMaterial().getId())
                 .supplierId(purchasePriceEntity.getSupplier().getId())

@@ -24,11 +24,8 @@ import com.spms.personal.mapper.UserMapper;
 import com.spms.personal.model.UserLoginRequest;
 import com.spms.personal.model.UserPageFilter;
 import com.spms.personal.service.UserService;
-import jakarta.annotation.Resource;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -45,22 +42,12 @@ import static com.spms.common.util.ParamUtils.requireNotNull;
 @RequiredArgsConstructor
 public class UserServiceImpl extends BaseService<UserEntity> implements UserService {
 
-    @Resource
-    private  UserMapper userMapper;
-
-    @Resource
-    private  TokenService tokenService;
-
-    @Resource
-    private LoginSessionService loginSessionService;
-
-    @Resource
-    private RedisHelper redisHelper;
-    @Autowired
-    private RoleMapper roleMapper;
-
-    @Autowired
-    private DepartmentMapper departmentMapper;
+    private final UserMapper userMapper;
+    private final TokenService tokenService;
+    private final LoginSessionService loginSessionService;
+    private final RedisHelper redisHelper;
+    private final RoleMapper roleMapper;
+    private final DepartmentMapper departmentMapper;
 
     private @NotNull String getUserPermissionCacheKey(long userId) {
         return "user_permission_" + userId;
@@ -202,7 +189,6 @@ public class UserServiceImpl extends BaseService<UserEntity> implements UserServ
         entity.setEmail(userEntity.getEmail());
         entity.setPhone(userEntity.getPhone());
         entity.setNickname(userEntity.getNickname());
-        initUpdateEntity(entity);
         userMapper.update(entity);
         if (userEntity.getRoleList() != null) {
             roleMapper.deleteUserRoleList(userEntity.getId());
@@ -227,33 +213,6 @@ public class UserServiceImpl extends BaseService<UserEntity> implements UserServ
             throw new AppException(CommonError.DATA_NOT_FOUND);
         }
         return userEntity;
-    }
-
-    private void fillUnchangedUserFields(UserEntity userEntity, UserEntity exist) {
-        if (userEntity.getIsDisabled() == null) {
-            userEntity.setIsDisabled(exist.getIsDisabled());
-        }
-        if (userEntity.getAvatar() == null) {
-            userEntity.setAvatar(exist.getAvatar());
-        }
-        if (userEntity.getEmail() == null) {
-            userEntity.setEmail(exist.getEmail());
-        }
-        if (userEntity.getGender() == null) {
-            userEntity.setGender(exist.getGender());
-        }
-        if (userEntity.getIdCard() == null) {
-            userEntity.setIdCard(exist.getIdCard());
-        }
-        if (userEntity.getNickname() == null) {
-            userEntity.setNickname(exist.getNickname());
-        }
-        if (userEntity.getPhone() == null) {
-            userEntity.setPhone(exist.getPhone());
-        }
-        if (userEntity.getRealName() == null) {
-            userEntity.setRealName(exist.getRealName());
-        }
     }
 
     private boolean isPasswordMatched(String password, UserEntity userEntity) {
