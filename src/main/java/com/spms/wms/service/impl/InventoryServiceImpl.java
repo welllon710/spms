@@ -14,6 +14,7 @@ import com.spms.wms.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 
 import static com.spms.common.util.ParamUtils.requireId;
@@ -27,12 +28,7 @@ public class InventoryServiceImpl extends BaseService<InventoryEntity> implement
 
     @Override
     public PageResult<InventoryEntity> getPage(PageQuery<InventoryPageFilter> request) {
-        InventoryPageFilter filter = request == null ? null : request.filter();
-        Map<String, Object> params = QueryParams.of(filter)
-                .putTrim("type", InventoryPageFilter::type)
-                .put("storageId", this::getStorageId)
-                .toMap();
-
+        Map<String, Object> params = buildParams(request == null ? null : request.filter());
         Page<InventoryEntity> page = new Page<>(getPageNum(request), getPageSize(request));
         return PageResult.from(inventoryMapper.getPageList(page, params), null);
     }
@@ -45,6 +41,18 @@ public class InventoryServiceImpl extends BaseService<InventoryEntity> implement
             throw new AppException(CommonError.DATA_NOT_FOUND, "库存不存在");
         }
         return inventory;
+    }
+
+    @Override
+    public List<InventoryEntity> getList(PageQuery<InventoryPageFilter> request) {
+        return inventoryMapper.getList(buildParams(request == null ? null : request.filter()));
+    }
+
+    private Map<String, Object> buildParams(InventoryPageFilter filter) {
+        return QueryParams.of(filter)
+                .putTrim("type", InventoryPageFilter::type)
+                .put("storageId", this::getStorageId)
+                .toMap();
     }
 
     private Long getStorageId(InventoryPageFilter filter) {

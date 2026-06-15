@@ -106,7 +106,7 @@ public class MaterialServiceImpl extends BaseService<MaterialEntity> implements 
         material.setCode(trimToNull(material.getCode()));
         material.setSpc(trimToNull(material.getSpc()));
         requireText(material.getName(), "物料名称不能为空");
-        requireId(material.getUnitId(), "物料单位不能为空");
+        requireNotNull(material.getUnit(), "物料单位不能为空");
         if (material.getCode() == null) {
             material.setCode(codeRuleService.createCode(CodeRuleField.MATERIAL_CODE));
         }

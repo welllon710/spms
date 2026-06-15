@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.List;
+
 @Permission
 @Api("inventory")
 @RequiredArgsConstructor
@@ -25,6 +27,11 @@ public class InventoryController {
     @PostMapping("getPage")
     public Json<PageResult<InventoryEntity>> getPage(@RequestBody PageQuery<InventoryPageFilter> request) {
         return Json.data(inventoryService.getPage(request));
+    }
+
+    @PostMapping("getList")
+    public Json<List<InventoryEntity>> getList(@RequestBody(required = false) @Valid PageQuery<InventoryPageFilter> request) {
+        return Json.data(inventoryService.getList(request));
     }
 
     @PostMapping("getDetail")

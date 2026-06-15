@@ -24,11 +24,20 @@ import com.spms.common.result.PageResult;
 import com.spms.common.util.QueryParams;
 import com.spms.system.enums.CodeRuleField;
 import com.spms.system.service.CodeRuleService;
+import com.spms.wms.entity.InputDetailEntity;
+import com.spms.wms.entity.InputEntity;
+import com.spms.wms.enums.InputStatus;
+import com.spms.wms.enums.InputType;
+import com.spms.wms.model.InputAddRequest;
+import com.spms.wms.service.InputService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +56,8 @@ public class PurchaseServiceImpl extends BaseService<PurchaseEntity> implements 
     private final PurchasePriceMapper purchasePriceMapper;
 
     private final CodeRuleService codeRuleService;
+
+    private final InputService inputService;
 
     @Override
     public PageResult<PurchaseEntity> getPage(PageQuery<PurchasePageFilter> request) {
@@ -189,6 +200,27 @@ public class PurchaseServiceImpl extends BaseService<PurchaseEntity> implements 
         update.setId(billId);
         update.setStatus(PurchaseStatus.IN_STORAGE.getValue());
         purchaseMapper.updateById(update);
+
+        PurchaseEntity detail = this.getDetail(new IdRequest(billId));
+        List<PurchaseDetailEntity> details = detail.getDetails();
+
+        List<InputDetailEntity> InputDetailList = new ArrayList<>();
+        for (PurchaseDetailEntity detailEntity : details) {
+            InputDetailEntity inputDetail = new InputDetailEntity();
+            inputDetail.setQuantity(detailEntity.getFinishQuantity())
+                    .setMaterialId(detailEntity.getMaterialId());
+            InputDetailList.add(inputDetail);
+        }
+        String code = codeRuleService.createCode(CodeRuleField.INPUT_BILL_CODE);
+        InputAddRequest request = InputAddRequest.builder()
+                .billCode(code)
+                .type(InputType.PURCHASE.getValue())
+                .purchaseId(billId)
+                .details(InputDetailList)
+                .build();
+
+        inputService.add(request);
+
     }
 
     private LambdaQueryWrapper<PurchaseEntity> buildPageWrapper(Map<String, Object> params) {

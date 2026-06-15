@@ -5,6 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.spms.base.BaseService;
 import com.spms.base.IdRequest;
 import com.spms.base.PageQuery;
+import com.spms.channel.entity.PurchaseEntity;
+import com.spms.channel.enums.PurchaseStatus;
+import com.spms.channel.mapper.PurchaseMapper;
 import com.spms.common.exception.AppException;
 import com.spms.common.exception.CommonError;
 import com.spms.common.result.PageResult;
@@ -48,6 +51,7 @@ public class InputServiceImpl extends BaseService<InputEntity> implements InputS
     private final InputDetailMapper inputDetailMapper;
     private final InventoryMapper inventoryMapper;
     private final CodeRuleService codeRuleService;
+    private final PurchaseMapper purchaseMapper;
 
     @Override
     public PageResult<InputEntity> getPage(PageQuery<InputPageFilter> request) {
@@ -225,6 +229,20 @@ public class InputServiceImpl extends BaseService<InputEntity> implements InputS
         update.setId(inputId);
         update.setStatus(InputStatus.FINISHED.getValue());
         inputMapper.updateById(update);
+
+        InputEntity input = getRequiredInput(inputId);
+
+        finishPurchaseIfPurchaseInput(input);
+    }
+
+    private void finishPurchaseIfPurchaseInput(InputEntity input) {
+        if (!InputType.PURCHASE.getValue().equals(input.getType()) || input.getPurchaseId() == null) {
+            return;
+        }
+        PurchaseEntity update = new PurchaseEntity();
+        update.setId(input.getPurchaseId());
+        update.setStatus(PurchaseStatus.FINISHED.getValue());
+        purchaseMapper.updateById(update);
     }
 
     private InputEntity getRequiredInput(Long id) {

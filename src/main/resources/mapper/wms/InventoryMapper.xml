@@ -91,4 +91,19 @@
         </where>
         order by inv.id desc
     </select>
+
+    <select id="getList" resultMap="inventoryResultMap">
+        select
+        <include refid="inventoryColumns"/>
+        <include refid="inventoryJoinFrom"/>
+        <where>
+            <if test="params.storageId != null and params.storageId != ''">
+                and inv.storage_id = #{params.storageId}
+            </if>
+            <if test="params.type != null and params.type != ''">
+                and inv.type = #{params.type}
+            </if>
+        </where>
+        order by inv.id desc
+    </select>
 </mapper>

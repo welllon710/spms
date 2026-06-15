@@ -4,15 +4,19 @@ import com.spms.wms.entity.InputDetailEntity;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Positive;
+import lombok.Builder;
 
 import java.util.List;
 
+@Builder
 public record InputAddRequest(
         String billCode,
         Integer type,
         Long moveId,
         Long orderId,
         Long purchaseId,
-        @Positive(message = "移库单关联ID须大于0") Long structureId,
+        Long structureId,
         @NotEmpty(message = "入库明细不能为空") List<@Valid InputDetailEntity> details
-) {}
+) {
+
+}
